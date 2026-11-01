@@ -18,7 +18,7 @@ from sqlalchemy.engine import make_url
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = ROOT / "backend" / ".env"
-API = "http://127.0.0.1:8000/api/v1"
+API = "http://127.0.0.1:8001/api/v1"
 LICENSE = "Unsplash License (commercial use allowed; attribution appreciated)"
 LICENSE_URL = "https://unsplash.com/license"
 YEARS = (2022, 2023, 2024, 2025, 2026)
@@ -81,8 +81,8 @@ def read_admin_token() -> str:
     if not dsn:
         raise SystemExit("DATABASE_URL is missing; demo import requires a local disposable test database.")
     database = make_url(dsn)
-    if database.host not in {"127.0.0.1", "localhost", "::1"} or not (database.database or "").endswith("_test"):
-        raise SystemExit("Refusing to import: DATABASE_URL must target a loopback database ending in _test.")
+    if database.host not in {"127.0.0.1", "localhost", "::1"} or database.database != "qhi_auto_demo":
+        raise SystemExit("Refusing to import: DATABASE_URL must target the isolated loopback qhi_auto_demo database.")
     token = values.get("ADMIN_API_KEY", "")
     if len(token) >= 32:
         return token
