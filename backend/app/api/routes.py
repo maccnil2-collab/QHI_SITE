@@ -3,13 +3,14 @@ from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.auth import get_optional_customer
 from app.core.config import settings
 from app.core.rate_limit import SlidingWindowLimiter
-from app.db.session import get_db
+from app.db.session import engine, get_db
 from app.models import Car, CarTranslation, Customer, PricingTariff, PriceQuote
 from app.schemas.car import CarOut
 from app.schemas.pricing import QuoteOut, QuoteRequest
@@ -22,6 +23,18 @@ quote_limiter = SlidingWindowLimiter(max_requests=10, window_seconds=60)
 @router.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "database": "configured" if settings.database_url else "not_configured"}
+
+
+@router.get("/ready", responses={503: {"description": "Database is unavailable"}})
+def readiness() -> dict[str, str]:
+    if engine is None:
+        raise HTTPException(status_code=503, detail="Service is not ready")
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        raise HTTPException(status_code=503, detail="Service is not ready") from None
+    return {"status": "ready", "database": "connected"}
 
 
 @router.get("/cars", response_model=list[CarOut])

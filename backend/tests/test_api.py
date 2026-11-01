@@ -13,6 +13,66 @@ def test_health_is_available_without_database_credentials():
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "not_configured"}
 
+
+def test_readiness_fails_closed_without_database(monkeypatch):
+    from app.api import routes
+
+    monkeypatch.setattr(routes, "engine", None)
+    response = client.get("/api/v1/ready")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service is not ready"}
+
+
+def test_readiness_contract_documents_unavailable_database_response():
+    response = client.get("/openapi.json")
+    operation = response.json()["paths"]["/api/v1/ready"]["get"]
+    assert "200" in operation["responses"]
+    assert "503" in operation["responses"]
+
+
+def test_readiness_checks_database_connection_without_exposing_connection_errors(monkeypatch):
+    from app.api import routes
+    from contextlib import contextmanager
+
+    class FakeConnection:
+        def execute(self, _query):
+            return 1
+
+    class FakeEngine:
+        @contextmanager
+        def connect(self):
+            yield FakeConnection()
+
+    monkeypatch.setattr(routes, "engine", FakeEngine())
+    response = client.get("/api/v1/ready")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready", "database": "connected"}
+
+
+def test_readiness_hides_database_connection_errors(monkeypatch):
+    from contextlib import contextmanager
+    from app.api import routes
+    from sqlalchemy.exc import SQLAlchemyError
+
+    class FailingEngine:
+        @contextmanager
+        def connect(self):
+            raise SQLAlchemyError("private database connection detail")
+            yield
+
+    monkeypatch.setattr(routes, "engine", FailingEngine())
+    response = client.get("/api/v1/ready")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Service is not ready"}
+    assert "private database connection detail" not in response.text
+
+
+def test_security_headers_are_added_to_api_responses():
+    response = client.get("/api/v1/health")
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
+
 def test_catalog_fails_closed_when_database_is_unconfigured():
     response = client.get("/api/v1/cars")
     assert response.status_code == 503
