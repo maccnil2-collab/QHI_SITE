@@ -320,6 +320,7 @@ def test_admin_car_output_contains_translations_for_edit_form():
     )
     result = car_output(car)
     assert result.id == 12
+    assert result.published is False
     assert result.images == ["https://example.test/car.jpg"]
     assert {item.locale for item in result.translations} == {"ru", "tg", "en"}
 

@@ -17,6 +17,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 def car_output(car: Car) -> AdminCarOut:
     values = {key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}
     values["images"] = [image.url for image in sorted(car.images, key=lambda item: item.sort_order)]
+    values["published"] = car.published
     values["translations"] = [{"locale": item.locale, "title": item.title, "description": item.description} for item in car.translations]
     return AdminCarOut.model_validate(values)
 

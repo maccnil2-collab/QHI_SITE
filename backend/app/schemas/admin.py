@@ -45,6 +45,7 @@ class CarWrite(BaseModel):
 
 
 class AdminCarOut(CarOut):
+    published: bool
     translations: list[TranslationInput]
 
 

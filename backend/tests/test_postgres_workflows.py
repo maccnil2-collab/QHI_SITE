@@ -161,7 +161,9 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
             db.commit()
 
         headers = {"X-Admin-Token": os.environ["ADMIN_API_KEY"]}
-        assert client.get("/api/v1/admin/cars", headers=headers).status_code == 200
+        admin_catalog = client.get("/api/v1/admin/cars", headers=headers)
+        assert admin_catalog.status_code == 200, admin_catalog.text
+        assert next(item for item in admin_catalog.json() if item["id"] == car_id)["published"] is True
         staff_leads = client.get("/api/v1/crm/leads")
         assert staff_leads.status_code == 200, staff_leads.text
         changed = client.patch(f"/api/v1/crm/leads/{lead_id}", json={"status": "contacted"}, headers={"X-CSRF-Token": csrf})
