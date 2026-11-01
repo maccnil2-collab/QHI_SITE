@@ -50,7 +50,7 @@ export default defineConfig({
     {
       command: `${npmCommand} run dev -- --hostname 127.0.0.1 --port ${webPort}`,
       url: `${webBase}/en`,
-      env: { NEXT_PUBLIC_API_URL: apiBase, NEXT_TELEMETRY_DISABLED: "1" },
+      env: { NEXT_PUBLIC_API_URL: apiBase, NEXT_TELEMETRY_DISABLED: "1", NEXT_DIST_DIR: ".next-e2e" },
       timeout: 120_000,
       reuseExistingServer: false,
     },
