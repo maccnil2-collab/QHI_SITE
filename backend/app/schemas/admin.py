@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from app.schemas.car import CarOut
+
 
 Locale = Literal["ru", "tg", "en"]
 Availability = Literal["available", "on_request", "unavailable"]
@@ -33,6 +35,10 @@ class CarWrite(BaseModel):
     published: bool = False
     image_urls: list[HttpUrl] = Field(default_factory=list, max_length=20)
     translations: list[TranslationInput] = Field(default_factory=list, max_length=3)
+
+
+class AdminCarOut(CarOut):
+    translations: list[TranslationInput]
 
 
 class TariffWrite(BaseModel):

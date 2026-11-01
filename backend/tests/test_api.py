@@ -166,3 +166,23 @@ def test_staff_manager_directory_returns_only_minimal_manager_records(monkeypatc
         "id": 4, "full_name": "Sales Manager",
         "email_normalized": "manager@example.test", "role": "manager",
     }]
+
+
+def test_admin_car_output_contains_translations_for_edit_form():
+    from app.api.admin_routes import car_output
+
+    car = SimpleNamespace(
+        id=12, slug="sample-ev", brand="Sample", model="EV", trim="Long range", year=2026,
+        price_cny=Decimal("123456.00"), range_km=610, battery_kwh=Decimal("80.00"), power_kw=250,
+        drivetrain="AWD", availability="available", published=False,
+        images=[SimpleNamespace(url="https://example.test/car.jpg", sort_order=0)],
+        translations=[
+            SimpleNamespace(locale="ru", title="Sample RU", description="Description RU"),
+            SimpleNamespace(locale="tg", title="Sample TG", description=None),
+            SimpleNamespace(locale="en", title="Sample EN", description="Description EN"),
+        ],
+    )
+    result = car_output(car)
+    assert result.id == 12
+    assert result.images == ["https://example.test/car.jpg"]
+    assert {item.locale for item in result.translations} == {"ru", "tg", "en"}

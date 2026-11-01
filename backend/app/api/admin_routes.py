@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.admin_auth import require_admin
 from app.db.session import get_db
 from app.models import AuditEvent, Car, CarImage, CarTranslation, Customer, PricingTariff
-from app.schemas.admin import CarWrite, RoleChange, TariffOut, TariffWrite
+from app.schemas.admin import AdminCarOut, CarWrite, RoleChange, TariffOut, TariffWrite
 from app.schemas.car import CarOut
 from app.schemas.auth import CustomerOut
 from app.services.pricing import Tariff
@@ -14,10 +14,11 @@ from app.services.pricing import Tariff
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def car_output(car: Car) -> CarOut:
+def car_output(car: Car) -> AdminCarOut:
     values = {key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}
     values["images"] = [image.url for image in sorted(car.images, key=lambda item: item.sort_order)]
-    return CarOut.model_validate(values)
+    values["translations"] = [{"locale": item.locale, "title": item.title, "description": item.description} for item in car.translations]
+    return AdminCarOut.model_validate(values)
 
 
 def audit(db: Session, actor: str, action: str, entity: str, identifier: int | str, payload: dict) -> None:
@@ -41,14 +42,14 @@ def apply_car(car: Car, data: CarWrite) -> None:
     car.translations.extend(CarTranslation(locale=item.locale, title=item.title, description=item.description) for item in data.translations)
 
 
-@router.get("/cars", response_model=list[CarOut])
-def admin_list_cars(actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> list[CarOut]:
-    cars = db.scalars(select(Car).options(selectinload(Car.images)).order_by(Car.id)).all()
+@router.get("/cars", response_model=list[AdminCarOut])
+def admin_list_cars(actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> list[AdminCarOut]:
+    cars = db.scalars(select(Car).options(selectinload(Car.images), selectinload(Car.translations)).order_by(Car.id)).all()
     return [car_output(car) for car in cars]
 
 
-@router.post("/cars", response_model=CarOut, status_code=status.HTTP_201_CREATED)
-def create_car(data: CarWrite, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> CarOut:
+@router.post("/cars", response_model=AdminCarOut, status_code=status.HTTP_201_CREATED)
+def create_car(data: CarWrite, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> AdminCarOut:
     car = Car()
     apply_car(car, data)
     db.add(car)
@@ -63,8 +64,8 @@ def create_car(data: CarWrite, actor: str = Depends(require_admin), db: Session 
         raise HTTPException(status_code=409, detail="A car with this slug already exists") from error
 
 
-@router.put("/cars/{car_id}", response_model=CarOut)
-def update_car(car_id: int, data: CarWrite, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> CarOut:
+@router.put("/cars/{car_id}", response_model=AdminCarOut)
+def update_car(car_id: int, data: CarWrite, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> AdminCarOut:
     car = db.scalar(select(Car).options(selectinload(Car.images), selectinload(Car.translations)).where(Car.id == car_id))
     if car is None:
         raise HTTPException(status_code=404, detail="Car not found")
@@ -123,9 +124,9 @@ def activate_tariff(tariff_id: int, actor: str = Depends(require_admin), db: Ses
     db.refresh(tariff)
     return tariff
 
-@router.patch("/cars/{car_id}/publication", response_model=CarOut)
-def set_car_publication(car_id: int, published: bool, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> CarOut:
-    car = db.scalar(select(Car).options(selectinload(Car.images)).where(Car.id == car_id))
+@router.patch("/cars/{car_id}/publication", response_model=AdminCarOut)
+def set_car_publication(car_id: int, published: bool, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> AdminCarOut:
+    car = db.scalar(select(Car).options(selectinload(Car.images), selectinload(Car.translations)).where(Car.id == car_id))
     if car is None:
         raise HTTPException(status_code=404, detail="Car not found")
     car.published = published
