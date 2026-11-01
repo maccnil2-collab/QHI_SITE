@@ -44,7 +44,7 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 29 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 30 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
 - Alembic generated offline PostgreSQL SQL through migration head `0006_crm`.
 - Uvicorn served OpenAPI with 29 paths, including auth, customer orders, CRM, and admin routes.

@@ -187,6 +187,10 @@ def _order_query():
     return select(VehicleOrder).options(selectinload(VehicleOrder.car), selectinload(VehicleOrder.events))
 
 
+def _staff_order_query():
+    return _order_query().options(selectinload(VehicleOrder.customer))
+
+
 @router.post("/me/orders", response_model=OrderOut, status_code=201)
 def create_order(data: OrderCreate, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> OrderOut:
     car = db.scalar(select(Car).where(Car.id == data.car_id, Car.published.is_(True)))
@@ -242,13 +246,13 @@ def cancel_my_order(order_id: int, context: AuthContext = Depends(get_auth_conte
 
 @router.get("/staff/orders", response_model=list[StaffOrderOut])
 def staff_list_orders(context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> list[StaffOrderOut]:
-    orders = db.scalars(_order_query().order_by(VehicleOrder.created_at.desc()).limit(200)).all()
+    orders = db.scalars(_staff_order_query().order_by(VehicleOrder.created_at.desc()).limit(200)).all()
     return [StaffOrderOut.model_validate(order) for order in orders]
 
 
 @router.patch("/staff/orders/{order_id}/status", response_model=StaffOrderOut)
 def staff_update_order(order_id: int, data: OrderStatusChange, context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> StaffOrderOut:
-    order = db.scalar(_order_query().where(VehicleOrder.id == order_id).with_for_update())
+    order = db.scalar(_staff_order_query().where(VehicleOrder.id == order_id).with_for_update())
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     try:
@@ -257,4 +261,4 @@ def staff_update_order(order_id: int, data: OrderStatusChange, context: AuthCont
         raise HTTPException(status_code=409, detail=str(error)) from error
     db.add(OrderEvent(order_id=order.id, actor_id=context.customer.id, event_type="status_changed", status=data.status, public_note=data.public_note, internal_note=data.internal_note))
     db.commit()
-    return StaffOrderOut.model_validate(db.scalar(_order_query().where(VehicleOrder.id == order.id)))
+    return StaffOrderOut.model_validate(db.scalar(_staff_order_query().where(VehicleOrder.id == order.id)))

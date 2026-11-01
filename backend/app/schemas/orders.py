@@ -55,6 +55,16 @@ class StaffOrderEventOut(OrderEventOut):
     internal_note: str | None
 
 
+class StaffCustomerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    full_name: str
+    email_normalized: str
+    phone: str | None
+
+
 class StaffOrderOut(OrderOut):
     customer_id: int
+    customer: StaffCustomerOut
     events: list[StaffOrderEventOut]
