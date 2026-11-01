@@ -2,12 +2,13 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.auth import get_optional_customer
 from app.core.config import settings
+from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
 from app.models import Car, CarTranslation, Customer, PricingTariff, PriceQuote
 from app.schemas.car import CarOut
@@ -15,6 +16,7 @@ from app.schemas.pricing import QuoteOut, QuoteRequest
 from app.services.pricing import Tariff, calculate_quote
 
 router = APIRouter()
+quote_limiter = SlidingWindowLimiter(max_requests=10, window_seconds=60)
 
 
 @router.get("/health")
@@ -51,7 +53,9 @@ def list_cars(
 
 
 @router.post("/quotes", response_model=QuoteOut)
-def quote(request: QuoteRequest, db: Session = Depends(get_db), customer: Customer | None = Depends(get_optional_customer)) -> QuoteOut:
+def quote(data: QuoteRequest, request: Request, db: Session = Depends(get_db), customer: Customer | None = Depends(get_optional_customer)) -> QuoteOut:
+    host = request.client.host if request.client else "unknown"
+    quote_limiter.check(f"quote:{host}")
     tariff = db.scalar(select(PricingTariff).where(PricingTariff.active.is_(True), PricingTariff.effective_on <= date.today()).order_by(PricingTariff.effective_on.desc()))
     if tariff is None:
         raise HTTPException(status_code=503, detail="No current pricing tariff is configured")
@@ -66,7 +70,7 @@ def quote(request: QuoteRequest, db: Session = Depends(get_db), customer: Custom
         paperwork_tjs=tariff.paperwork_tjs,
     )
     try:
-        result = calculate_quote(request.price_cny, config)
+        result = calculate_quote(data.price_cny, config)
     except ValueError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     quote = PriceQuote(
@@ -75,7 +79,7 @@ def quote(request: QuoteRequest, db: Session = Depends(get_db), customer: Custom
         tariff_name=tariff.name,
         effective_on=tariff.effective_on,
         currency=tariff.currency,
-        price_cny=request.price_cny,
+        price_cny=data.price_cny,
         cny_to_tjs=tariff.cny_to_tjs,
         shipping_tjs=tariff.shipping_tjs,
         customs_rate=tariff.customs_rate,

@@ -1,4 +1,4 @@
-﻿# QHI AUTO Development Environment Report
+# QHI AUTO Development Environment Report
 
 Audit date: 2026-11-01  
 Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
@@ -44,11 +44,11 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 23 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 26 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
 - Alembic generated offline PostgreSQL SQL through migration head `0006_crm`.
 - Uvicorn served OpenAPI with 28 paths, including auth, customer orders, CRM, and admin routes.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 29-key schemas and execute under Node's TypeScript stripping mode.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 29-key schemas and execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues

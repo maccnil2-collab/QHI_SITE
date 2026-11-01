@@ -85,3 +85,64 @@ def test_order_and_staff_crm_routes_require_login_before_database_access():
         response = client.get(path)
         assert response.status_code == 401
         assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_quote_endpoint_reports_unavailable_without_current_tariff(monkeypatch):
+    fake_db = SimpleNamespace(scalar=lambda _statement: None)
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: fake_db)
+    try:
+        response = client.post("/api/v1/quotes", json={"price_cny": "10000"})
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 503
+    assert response.json()["detail"] == "No current pricing tariff is configured"
+
+
+def test_quote_endpoint_returns_tariff_backed_itemized_snapshot(monkeypatch):
+    from datetime import date, datetime, timezone
+
+    tariff = SimpleNamespace(
+        id=9, name="Verified draft tariff", currency="TJS", effective_on=date(2026, 1, 1),
+        cny_to_tjs=Decimal("1.2"), shipping_tjs=Decimal("500"), customs_rate=Decimal("0.1"),
+        customs_basis="vehicle_plus_shipping", additional_tjs=Decimal("10"), paperwork_tjs=Decimal("20"),
+    )
+    class FakeDB:
+        quote = None
+        def scalar(self, _statement): return tariff
+        def add(self, value): self.quote = value
+        def commit(self): pass
+        def refresh(self, value):
+            value.id = 123
+            value.created_at = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    fake_db = FakeDB()
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: fake_db)
+    try:
+        response = client.post("/api/v1/quotes", json={"price_cny": "10000"})
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    result = response.json()
+    assert result["tariff_name"] == tariff.name
+    assert result["effective_on"] == "2026-01-01"
+    assert result["customs_basis"] == "vehicle_plus_shipping"
+    assert result["car_tjs"] == "12000.00"
+    assert result["shipping_tjs"] == "500.00"
+    assert result["customs_tjs"] == "1250.00"
+    assert result["total_tjs"] == "13780.00"
+    assert fake_db.quote.customer_id is None
+
+
+def test_quote_endpoint_rate_limits_anonymous_persistence(monkeypatch):
+    from app.core.rate_limit import SlidingWindowLimiter
+    from app.api import routes
+
+    monkeypatch.setattr(routes, "quote_limiter", SlidingWindowLimiter(max_requests=1, window_seconds=60))
+    fake_db = SimpleNamespace(scalar=lambda _statement: None)
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: fake_db)
+    try:
+        first = client.post("/api/v1/quotes", json={"price_cny": "10000"})
+        second = client.post("/api/v1/quotes", json={"price_cny": "10000"})
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert first.status_code == 503
+    assert second.status_code == 429
