@@ -27,6 +27,7 @@ Updated: 2026-11-01
 - Isolated TypeScript semantic check for RU/TG/EN message dictionaries: **PASS**. Full-app semantic checking through the bundled compiler remains blocked by absent React/Next/Node/Playwright declarations; after fixes, the remaining diagnostics were dependency/type-resolution errors.
 - pip check: **PASS**.
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; ten migrations applied, head is `0010_shared_rate_limit_buckets`, schema check clean.
+- Populated PostgreSQL backup/restore: **PASS** into `qhi_auto_restore_utf8_test`; all 18 table row counts and deterministic content hashes match, including Tajik text. An initial restore into a Windows-default `WIN1251` target failed on UTF-8; the partial test target and artifacts were retained.
 - `alembic check`: **PASS**, no model/schema differences.
 - Alembic now reads ignored `backend/.env` for local commands; `alembic current` and `alembic check` both pass without exporting `DATABASE_URL` manually.
 - PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM, admin editing/publication, and shared rate-limit checks across independent instances and concurrent requests).
@@ -39,7 +40,7 @@ Updated: 2026-11-01
 ## Not verified
 
 - Next.js production build, full TypeScript semantic check, frontend lint, and Playwright. Tooling is configured, but the dependency-backed commands cannot run because `next`, `eslint`, and `playwright` are not installed.
-- Browser E2E and migration rollback. An isolated PostgreSQL custom-format backup restored successfully to a new test database at Alembic head; the drill used an empty business dataset, so populated-data recovery remains unverified.
+- Browser E2E and migration rollback. Production backup encryption, retention, and recovery procedures are also not established by the local test-database drill.
 - Docker image builds, Compose health checks, TLS proxy behavior, and production deployment.
 
 The detailed current network/PostgreSQL diagnosis and journey matrix are in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md).

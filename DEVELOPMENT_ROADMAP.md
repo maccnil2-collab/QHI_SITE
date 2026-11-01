@@ -23,7 +23,7 @@ Priorities are ordered by dependency and risk. Do not publish legal, tariff, inv
 - Configure a private disposable test database without committing credentials.
 - Applied all migrations through `0010_shared_rate_limit_buckets` on an isolated test database; `alembic check` reports no schema drift. PostgreSQL rate limits are atomic and shared between workers.
 - One API integration workflow covers sessions, quotes, orders, CRM, and admin. Add targeted concurrency/transaction tests for order transitions, document metadata, and ownership.
-- A custom-format backup of the empty isolated test database restored successfully into a separate database at migration head. Repeat with representative non-production fixture data and document retention/encryption before production use.
+- A custom-format backup of populated test data restored into a fresh UTF-8 database at migration head; all 18 table row counts and deterministic row-content hashes matched. Define encrypted backup retention and recovery ownership before production use.
 - Establish forward-repair procedures before production data.
 
 ## 3. Close identity and security gaps
