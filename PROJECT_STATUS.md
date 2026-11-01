@@ -20,7 +20,7 @@ Updated: 2026-11-01
 
 ## Verified in this takeover
 
-- Backend tests: **53 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning).
+- Backend tests: **53 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning), with `PYTHON_DOTENV_DISABLED=true` to keep unit tests independent of ignored local credentials. The separately invoked PostgreSQL workflow passed (**1 passed**).
 - Python compileall: **PASS**.
 - TypeScript/TSX syntax transpilation: **PASS (22 files)** using the VS Code-bundled compiler; this is syntax-only, not a semantic typecheck.
 - Isolated TypeScript semantic check for RU/TG/EN message dictionaries: **PASS**. Full-app semantic checking through the bundled compiler remains blocked by absent React/Next/Node/Playwright declarations; after fixes, the remaining diagnostics were dependency/type-resolution errors.
@@ -33,7 +33,7 @@ Updated: 2026-11-01
 - Isolated database readiness and integration evidence are maintained in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md); PostgreSQL tests are explicitly opt-in and require a loopback database with a `*_test` name.
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
 - Root-level pytest invocation: **PASS** from repository root.
-- Frontend npm installation: **BLOCKED** by `EACCES` reaching `registry.npmjs.org`.
+- Frontend npm installation: **BLOCKED**; registry DNS resolves but HTTPS connect fails, and Node/npm are unavailable in the current shell.
 
 ## Not verified
 

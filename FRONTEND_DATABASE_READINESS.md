@@ -9,6 +9,7 @@ Current checkpoint: `42769e8` (`Fix admin vehicle translation updates`)
 - npm user config is `C:\Users\Asus Notebook\.npmrc`. No user, repository, or portable config file overrides registry or proxy settings. npm `proxy` and `https-proxy` are unset; no HTTP proxy environment variables are present.
 - The current user has Modify access to npm cache, but `next` and `typescript` packages are not cached.
 - `npm ping --fetch-retries=0 --fetch-timeout=8000` fails with system `EACCES` before HTTP response. DNS lookup also returns no addresses in this execution environment. The evidence indicates outbound socket/network access is denied by the environment, not an npm cache ACL, registry URL, proxy, or TLS problem.
+- Recheck in the current shell: DNS now resolves `registry.npmjs.org`, but `curl.exe -I https://registry.npmjs.org/` fails with connection error 7. `node` and `npm` are not currently available in PATH or the standard install locations checked, and Docker is not available either. Installation, dependency resolution, and container-based fallback remain blocked here.
 - No registry/proxy config was changed. `frontend/package-lock.json` and `node_modules` remain absent; a lockfile was not fabricated.
 
 ## Frontend checks
@@ -60,19 +61,24 @@ These API checks do not establish frontend/browser integration.
 With the isolated PostgreSQL server running:
 
 ```powershell
+$env:PYTHON_DOTENV_DISABLED = 'true'
+.\.venv\Scripts\python.exe -m pytest -q
+
 $env:DATABASE_URL = 'postgresql+psycopg://postgres@127.0.0.1:55439/qhi_auto_test'
-cd backend
+Push-Location backend
 ..\.venv\Scripts\python.exe -m alembic current
-cd ..
+Pop-Location
 $env:QHI_TEST_DATABASE_URL = $env:DATABASE_URL
 .\.venv\Scripts\python.exe -m pytest backend\tests\test_postgres_workflows.py -q
 ```
+
+Latest isolated backend verification: **53 passed, 1 opt-in test skipped**, `compileall` and `pip check` passed; the PostgreSQL workflow passed (**1 passed**) and `alembic check` found no schema drift. The local `.env` is intentionally disabled for the unit suite because those tests assert behavior with no DB/admin credentials; the separate PostgreSQL workflow explicitly supplies its disposable test DSN.
 
 After npm dependencies are installed, run Playwright from `frontend/` with `QHI_TEST_DATABASE_URL` set to the same loopback `*_test` DSN. Its config starts API/web dev servers on loopback ports 18000/13000 and refuses other database hosts/names.
 
 ## Remaining gates
 
-1. Restore outbound access to npm registry or provide an approved mirror, then generate/review the lockfile and use `npm ci`.
+1. Restore outbound HTTPS access and make Node/npm available, then generate/review the lockfile and use `npm ci`.
 2. Resolve package peers, run typecheck, lint, Next build, and Playwright; fix failures based on actual output.
 3. Run browser scenarios against the isolated database and record actual results.
 4. Keep production deployment blocked on Docker/staging, TLS/reverse proxy, durable scanned document storage, a populated-data restore drill, monitoring, email verification/recovery, and key rotation.
