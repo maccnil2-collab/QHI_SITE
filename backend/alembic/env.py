@@ -1,11 +1,15 @@
 ﻿from logging.config import fileConfig
 import os
+from pathlib import Path
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from app.db.base import Base
 from app import models  # noqa: F401 — register model metadata
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 config = context.config
 if config.config_file_name is not None:
