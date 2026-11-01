@@ -16,6 +16,7 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 | Alembic | 1.20.1 |
 | Pydantic | 2.14.2 |
 | psycopg | 3.3.6 |
+| python-dotenv | 1.2.4 |
 | pytest | 9.2.0 |
 | Node.js / npm | 26.13.0 / 11.20.0, project-local under `tools` |
 | Git | 2.56.0.windows.4, portable under `tools` |
@@ -44,7 +45,7 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 46 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 47 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
 - Alembic generated offline PostgreSQL SQL through migration head `0009_crm_analytics_indexes`.
 - OpenAPI exposes 40 paths, including date-bounded CRM analytics, database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, and admin routes.
@@ -53,6 +54,8 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues
+
+- A Docker/Compose deployment starter is present, but the Docker executable is not installed, so image builds and container health checks have not run.
 
 - npm registry requests fail with EACCES and the local npm cache has no usable Next.js packages. Therefore Next build, TypeScript typecheck, and Playwright runs have not been performed.
 - PostgreSQL accepts TCP connections; a read-only local query to the default `postgres` database also failed without credentials. `DATABASE_URL` is not configured and no `backend/.env` exists. No password was guessed, printed, or written. Migrations have only been generated offline, not applied to the running instance.
@@ -64,4 +67,4 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 1. Restore approved npm registry access, install from a lockfile, then run Next build and typecheck before browser tests.
 2. Configure `DATABASE_URL` privately, apply migrations through `0009_crm_analytics_indexes`, and run PostgreSQL integration tests; keep credentials out of command output and repository files.
 3. Add Playwright to the locked frontend toolchain and exercise registration, order lifecycle, staff access, CRM, and mobile layouts.
-4. Complete email verification/recovery, production object storage and malware scanning, production rate limiting, backup/restore drills, and deployment configuration before a public launch.
+4. Complete email verification/recovery, secure browser session restoration, production object storage and malware scanning, distributed rate limiting, TLS proxy setup, backup/restore drills, and monitoring before a public launch.

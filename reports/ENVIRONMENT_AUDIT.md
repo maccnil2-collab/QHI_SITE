@@ -10,6 +10,7 @@ Date: 2026-11-01. Project: `C:\Users\Asus Notebook\QHI-AUTO`.
 | Alembic | 1.20.1 |
 | Pydantic | 2.14.2 |
 | psycopg / binary | 3.3.6 / 3.3.6 |
+| python-dotenv | 1.2.4 |
 | pytest | 9.2.0 |
 | Node.js / npm | Project-local 26.13.0 / 11.20.0 |
 | Git | Portable 2.56.0.windows.4 |
@@ -25,7 +26,7 @@ Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 i
 ## Checks performed
 - Python, Node.js, npm, Git versions and venv package inventory succeeded; `pip check` reports no broken requirements.
 - PostgreSQL service is Running and accepts TCP connections. `psql -w` without a password was rejected; no password was attempted.
-- 46 API, readiness/security headers, pricing, auth/session/notification/document, order, CRM analytics, quote calculator/rate-limit, admin-guard, and CORS tests passed; compileall passed; Alembic offline SQL generated through head `0009_crm_analytics_indexes`.
+- 47 API, readiness/security headers, pricing, auth/session/notification/document, order, CRM analytics, quote calculator/rate-limit, admin-guard, and CORS tests passed; compileall passed; Alembic offline SQL generated through head `0009_crm_analytics_indexes`.
 - OpenAPI smoke test returned 40 paths, including date-bounded CRM analytics, database readiness, customer session and notification controls, staff document upload, owner/visibility-scoped downloads, orders, and admin routes.
 - Base locale dictionaries match; account dictionaries have 44 matching keys and CRM dictionaries have 85 matching keys per locale, and execute under Node 26 strip-types. JSON package/TypeScript manifests parse. All 18 TypeScript/TSX files pass TypeScript syntax transpilation using the compiler bundled with VS Code; this does not replace semantic typechecking or a Next build.
 - npm registry lookup failed with EACCES. Next.js build/typecheck and Playwright tests were not run. `DATABASE_URL` is not set and `backend/.env` is absent, so no migration was applied to PostgreSQL. No secret was guessed or emitted.
@@ -34,3 +35,5 @@ Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 i
 The execution environment previously blocked winget and pip network access. Work uses existing local tools and dependencies. No Windows system settings were changed.
 
 - Admin catalog, tariff, and customer/staff role screens provide Russian, Tajik, and English labels; full Next build and browser checks remain blocked on npm package access.
+
+- A rootless API/web plus private PostgreSQL Compose deployment starter and deployment guide are present. Docker is not installed, so images and health checks are unverified; the npm lockfile is still missing.

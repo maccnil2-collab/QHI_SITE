@@ -9,7 +9,8 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
 - [x] Localized responsive catalog and public cost-quote/enquiry forms (ru/tg/en source); build awaits npm registry access.
 - [ ] Install frontend dependencies from a lockfile, build, and typecheck (npm registry currently returns EACCES).
-- [ ] Apply migrations and run integration tests after `DATABASE_URL` is configured privately. Current migration head: `0009_crm_analytics_indexes`.
+- [ ] Apply migrations and run integration tests after `DATABASE_URL` is configured privately. Current migration head: `0009_crm_analytics_indexes`; Docker and Compose are not installed here.
+- [ ] Generate/review the npm lockfile, build and verify the frontend image, then exercise the Compose deployment and health checks. Starter instructions: `docs/DEPLOYMENT.md`.
 - [x] Initial API-key-protected admin catalog/tariff management and audit trail.
 - [x] Public itemized tariff-backed quote and rate-limited CRM enquiry API/UI source.
 - [x] Admin surfaces for catalog, tariffs, customer/staff role management; bootstrap-key auth remains transitional.
@@ -23,7 +24,8 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Add staff-only date-bounded CRM analytics for lead cohort conversion, sources, manager workload, order statuses, and quote estimates.
 - [ ] Verify CRM analytics in a browser and add event-time attribution where business definitions require conversion-date reporting.
 - [ ] Review localization quality across all screens, accessibility, performance, and security checks. Admin catalog/tariff/customer-role screens now have ru/tg/en dictionaries; browser verification remains pending.
-- [ ] Deployment, backup/restore, monitoring, and operations guide.
+- [x] Deployment guide and single-host Compose starter added in `docs/DEPLOYMENT.md`.
+- [ ] Execute image builds, Compose health checks, TLS proxy verification, backup/restore drills, and production monitoring setup.
 
 ## Working method
 Deliver vertical slices. Run the relevant tests after each change, record only real results in `docs/DEVELOPMENT_STATUS.md`, and commit working checkpoints. Do not invent commercial/legal data. Keep user-owned files outside the Git checkpoint unless required.

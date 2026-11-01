@@ -4,9 +4,18 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 
 from app.db.session import get_db
-from app.main import app
+from app.main import app, create_app
 
 client = TestClient(app)
+
+
+def test_production_app_hides_api_schema_and_interactive_docs():
+    production_client = TestClient(create_app("production"))
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        response = production_client.get(path)
+        assert response.status_code == 404
+        assert response.headers["X-Content-Type-Options"] == "nosniff"
+
 
 def test_health_is_available_without_database_credentials():
     response = client.get("/api/v1/health")
