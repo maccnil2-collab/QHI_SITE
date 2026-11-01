@@ -24,3 +24,5 @@ downloads/
 node_modules/
 .next/
 
+
+.next-*/

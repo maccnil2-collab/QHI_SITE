@@ -9,6 +9,7 @@ from app.schemas.car import CarOut
 
 Locale = Literal["ru", "tg", "en"]
 Availability = Literal["available", "on_request", "unavailable"]
+CarCategory = Literal["sedan", "suv", "crossover", "sports", "electric", "premium", "economy", "family"]
 CustomsBasis = Literal["vehicle_value", "vehicle_plus_shipping"]
 
 
@@ -28,9 +29,19 @@ class CarWrite(BaseModel):
     year: int = Field(ge=2000, le=2100)
     price_cny: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     range_km: int | None = Field(default=None, ge=0, le=3000)
+    fuel_consumption_l_100km: Decimal | None = Field(default=None, gt=0, le=100, max_digits=5, decimal_places=2)
     battery_kwh: Decimal | None = Field(default=None, ge=0, max_digits=7, decimal_places=2)
     power_kw: int | None = Field(default=None, ge=0, le=3000)
     drivetrain: str | None = Field(default=None, max_length=32)
+    category: CarCategory | None = None
+    engine_type: str | None = Field(default=None, max_length=40)
+    engine_cc: int | None = Field(default=None, ge=0, le=15000)
+    transmission: str | None = Field(default=None, max_length=40)
+    mileage_km: int | None = Field(default=None, ge=0, le=2000000)
+    exterior_color: str | None = Field(default=None, max_length=80)
+    equipment: str | None = Field(default=None, max_length=10000)
+    specifications: str | None = Field(default=None, max_length=10000)
+    is_demo: bool = False
     availability: Availability = "on_request"
     published: bool = False
     image_urls: list[HttpUrl] = Field(default_factory=list, max_length=20)

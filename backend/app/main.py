@@ -7,6 +7,7 @@ from app.api.routes import router
 from app.api.admin_routes import router as admin_router
 from app.api.auth_routes import router as auth_router
 from app.api.crm_routes import router as crm_router
+from app.api.support_routes import router as support_router
 from app.core.config import settings
 
 def create_app(environment: str | None = None) -> FastAPI:
@@ -41,6 +42,7 @@ def create_app(environment: str | None = None) -> FastAPI:
     application.include_router(admin_router, prefix="/api/v1")
     application.include_router(auth_router, prefix="/api/v1")
     application.include_router(crm_router, prefix="/api/v1")
+    application.include_router(support_router, prefix="/api/v1")
     return application
 
 

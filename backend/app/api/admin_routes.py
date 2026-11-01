@@ -15,7 +15,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 def car_output(car: Car) -> AdminCarOut:
-    values = {key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}
+    values = {key: getattr(car, key, CarOut.model_fields[key].default) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}
     values["images"] = [image.url for image in sorted(car.images, key=lambda item: item.sort_order)]
     values["published"] = car.published
     values["translations"] = [{"locale": item.locale, "title": item.title, "description": item.description} for item in car.translations]
@@ -35,7 +35,7 @@ def tariff_audit_payload(tariff: PricingTariff) -> dict:
 
 
 def apply_car(car: Car, data: CarWrite) -> None:
-    for key in ("slug", "brand", "model", "trim", "year", "price_cny", "range_km", "battery_kwh", "power_kw", "drivetrain", "availability", "published"):
+    for key in ("slug", "brand", "model", "trim", "year", "price_cny", "range_km", "fuel_consumption_l_100km", "battery_kwh", "power_kw", "drivetrain", "category", "engine_type", "engine_cc", "transmission", "mileage_km", "exterior_color", "equipment", "specifications", "is_demo", "availability", "published"):
         setattr(car, key, getattr(data, key))
     car.images.clear()
     car.images.extend(CarImage(url=str(url), sort_order=index) for index, url in enumerate(data.image_urls))

@@ -45,6 +45,9 @@ def list_cars(
     min_price_cny: Decimal | None = Query(default=None, ge=0),
     max_price_cny: Decimal | None = Query(default=None, ge=0),
     min_range_km: int | None = Query(default=None, ge=0),
+    category: str | None = Query(default=None, max_length=40),
+    sort: Literal["price_asc", "price_desc", "year_desc", "range_desc", "name"] = "name",
+    include_demo: bool = True,
     limit: int = Query(default=24, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
@@ -61,13 +64,19 @@ def list_cars(
         statement = statement.where(Car.price_cny <= max_price_cny)
     if min_range_km is not None:
         statement = statement.where(Car.range_km >= min_range_km)
-    cars = db.scalars(statement.order_by(Car.brand, Car.model).limit(limit).offset(offset)).all()
+    if category:
+        statement = statement.where(Car.category == category)
+    if not include_demo:
+        statement = statement.where(Car.is_demo.is_(False))
+    sort_column = {"price_asc": Car.price_cny.asc(), "price_desc": Car.price_cny.desc(), "year_desc": Car.year.desc(), "range_desc": Car.range_km.desc().nullslast(), "name": Car.brand.asc()}.get(sort)
+    ordering = (sort_column, Car.model.asc()) if sort == "name" else (sort_column,)
+    cars = db.scalars(statement.order_by(*ordering).limit(limit).offset(offset)).all()
     return [_car_output(car, locale) for car in cars]
 
 
 def _car_output(car: Car, locale: str) -> CarOut:
     return CarOut.model_validate({
-        **{key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}},
+        **{key: getattr(car, key, CarOut.model_fields[key].default if CarOut.model_fields[key].default is not None else None) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}},
         "localized_title": next((item.title for item in car.translations if item.locale == locale), f"{car.brand} {car.model}"),
         "localized_description": next((item.description for item in car.translations if item.locale == locale), None),
         "images": [image.url for image in car.images],
