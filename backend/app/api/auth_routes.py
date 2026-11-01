@@ -347,8 +347,9 @@ def my_quotes(context: AuthContext = Depends(get_auth_context), db: Session = De
 
 
 def _localized_car(car: Car, locale: str) -> CarOut:
-    values = {key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}
+    values = {key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "image_details", "localized_title", "localized_description"}}
     values["images"] = [image.url for image in car.images]
+    values["image_details"] = [{"url": image.url, "alt": image.alt, "attribution": image.attribution, "license_name": image.license_name, "source_url": image.source_url} for image in car.images]
     values["localized_title"] = next((item.title for item in car.translations if item.locale == locale), f"{car.brand} {car.model}")
     values["localized_description"] = next((item.description for item in car.translations if item.locale == locale), None)
     return CarOut.model_validate(values)
