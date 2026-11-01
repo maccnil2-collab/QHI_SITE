@@ -124,6 +124,10 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         csrf = logged_in.json()["csrf_token"]
         assert client.get("/api/v1/auth/me").status_code == 200
 
+        # A valid customer session must not grant access to staff-only data.
+        for staff_path in ("/api/v1/crm/leads", "/api/v1/crm/overview", "/api/v1/auth/staff/orders"):
+            assert client.get(staff_path).status_code == 403
+
         catalog = client.get("/api/v1/cars", params={"locale": "tg", "q": "Integration", "min_price_cny": "9000", "min_range_km": "400"})
         assert catalog.status_code == 200, catalog.text
         assert any(item["id"] == car_id and item["localized_title"] == "Мошини санҷишӣ" for item in catalog.json())
