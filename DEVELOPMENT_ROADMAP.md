@@ -2,10 +2,11 @@
 
 Priorities are ordered by dependency and risk. Do not publish legal, tariff, inventory, or delivery claims without owner-provided values.
 
-## Progress at checkpoint `ec0d0c2`
+## Progress at checkpoint `0b88f19`
 
 - Completed: isolated PostgreSQL test cluster; all nine migrations applied; schema/model comparison clean; one opt-in real PostgreSQL API workflow test passes.
 - Completed: localized vehicle detail route, catalog navigation, and authenticated quote persistence; ESLint and desktop/mobile Playwright source configuration added.
+- Completed: migration `0010_shared_rate_limit_buckets`; authentication, quote, lead, and document limits are backed by atomic PostgreSQL counters, verified across independent limiter instances.
 - Blocked: npm registry socket access (`EACCES` before HTTP), so lockfile, installed toolchain, semantic typecheck, lint, Next build, and browser execution remain outstanding.
 
 ## 1. Establish reproducible frontend verification — in progress
