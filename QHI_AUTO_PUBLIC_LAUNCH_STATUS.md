@@ -1,6 +1,6 @@
 # QHI AUTO public launch status — 2026-11-01
 
-## Completed in this work session
+## Work completed at checkpoint `626ca1d`
 
 - Added reversible Alembic revision `0012_structured_vehicle_specs` for fuel type, torque, 0–100 km/h time, maximum speed, seating, doors, dimensions, key advantages, specification-source URL, optional USD/TJS prices, price note, and price-source URL.
 - Added API filtering by year range, engine type, and fuel type. The frontend now requests up to 100 rows and exposes localized RU/TG/EN controls for those filters.
@@ -10,7 +10,7 @@
 - Added Netlify build configuration for the Next.js frontend and a build-time guard that rejects missing, insecure, or localhost production API URLs. Backend and PostgreSQL remain separate services.
 - Added `DEPLOYMENT_NETLIFY.md` with the service split and outstanding production steps.
 
-## Verification
+## Verification recorded at checkpoint `626ca1d` (historical)
 
 - Frontend: `npm run typecheck` and `npm run lint` pass.
 - Backend unit/API tests: 58 passed, 1 PostgreSQL integration test skipped.
@@ -22,21 +22,21 @@
 
 ## Not completed / no unsupported claims
 
-- There is no verified, loaded set of 100 production/demo inventory records in the repository that could be safely promoted. The current database is unavailable, and there is no production backup to inspect. No vehicle rows were inserted or altered.
-- `frontend/public/images/` contains QHI brand assets, not a licensed library of model-matching vehicle photographs. No shared logo or unrelated car image was reused to fabricate inventory. Therefore no vehicle is presented as a new real offer and the 100-car catalog is not complete.
-- A production backup could not be made: no `DATABASE_URL`, root `.env`, or available Docker/PostgreSQL service was found. Revision `0012` was not applied to any database.
-- The local FastAPI readiness endpoint on port 8000 is unavailable, so catalog data, saved state, calculator persistence, authorization, and live vehicle galleries could not be integration-tested here.
-- `https://electro-tj.netlify.app/` could not be reached from this environment. No Netlify CLI, authenticated Netlify integration, `NETLIFY_AUTH_TOKEN`, or site ID is available, so site ownership/current deploys cannot be verified and no deployment was attempted.
-- No external storage bucket or production API host is configured. The Next.js frontend is prepared for Netlify, but it cannot be deployed safely until the API URL, backend, database, CORS origin, and durable image storage are supplied/configured.
+- At checkpoint `626ca1d`, there was no loaded 100-card set. This takeover added exactly 100 published DEMO rows to the isolated local `qhi_auto_test` database (20 model families × 5 illustrative year/trim cards), each with `is_demo=true`; no production database was accessed.
+- Each demo row has three Unsplash-licensed illustrative image URLs and credits, RU/TG/EN titles/descriptions, technical fields, and USD/TJS demo prices. The photos are explicitly labeled illustrative, and model/year/trim specifications and prices are demo estimates, not actual inventory or offers. `frontend/public/images/` remains the existing QHI brand artwork; vehicle images are external Unsplash URLs in the database.
+- The connected database is the local test database `qhi_auto_test`; it now contains the 100 demo cards and integration fixtures. No production database was configured, accessed, or backed up.
+- Unsplash image URLs and license metadata are present, but the network-restricted browser could not fetch the image bytes. Cards and galleries were checked; visual image loading must be rechecked outside this sandbox.
+- Ownership/deploy access for `qhi-auto.netlify.app` is unverified. No deployment was attempted.
+- Durable production image storage, a production API/database, and production CORS are not configured. Demo model/year/trim values and prices are estimates, not verified offers or production inventory.
 
 ## Required before public launch
 
 1. Provide access to the owner's Netlify account/site so the target site's ownership and current deploy can be inspected before linking or publishing.
 2. Configure a reachable production FastAPI host and managed PostgreSQL database; set `NEXT_PUBLIC_API_URL` to the HTTPS API base ending in `/api/v1` and set backend CORS for the verified frontend origin.
 3. Back up that production database, review the migration, and only then apply Alembic revision `0012`.
-4. Provide/approve a durable image-storage location and a verified dataset containing exactly 100 distinct vehicle configurations, model-specific photos, image attribution/licenses, specification sources, and sourced or clearly estimated prices.
-5. Configure a disposable local PostgreSQL database ending in `_test` to run the gated Playwright workflows. Do not point it at production.
-6. After these are configured, run the migration, seed and validate 100 rows, run the full tests, deploy, and smoke-test the public site and API.
+4. For production inventory, verify 100 vehicle configurations, model-specific photos, technical references, and prices; choose durable image storage. The local demo set is illustrative and must not be presented as real inventory.
+5. The disposable local `qhi_auto_test` PostgreSQL database is available for gated workflows; keep integration and Playwright tests on loopback `*_test` databases.
+6. After production hosting, backups, image storage, and Netlify ownership are verified, run the production migration, deploy, and smoke-test the public site and API.
 
 ## Takeover follow-up after checkpoint `626ca1d`
 
@@ -45,6 +45,7 @@
 - Migration `0011` initially failed because its 38-character revision ID exceeded Alembic's standard `alembic_version.version_num VARCHAR(32)`. PostgreSQL rolled back the transaction. Shortened the revision ID to `0011_demo_inventory_support`, updated `0012`'s dependency, and successfully upgraded to `0012_structured_vehicle_specs`.
 - `alembic check` then exposed the migration-created `support_ticket_events.actor_id` index missing from ORM metadata. Added `index=True` to the existing model; `alembic check` now reports no drift.
 - Backend verification: **58 passed, 1 skipped**. Frontend typecheck, lint, and production build pass. Local FastAPI readiness is `ready`; the existing Next dev frontend serves `/ru`, `/tg`, and `/en` on port 13000. Port 3000 is denied by this environment (`listen EACCES`).
-- The connected DB is explicitly a test DB. At initial inspection it had 14 published `Integration EV` workflow fixtures, **0 demo rows**, and **0 photos**. Re-running the PostgreSQL workflow added two uniquely marked integration fixtures and six test photos; the DB now has 16 test rows and **0 demo rows**. These fixtures were preserved and backed up in `qhi-auto-test-after-db-workflow-626ca1d.dump`. No demo inventory was inserted. `qhi-auto.netlify.app` ownership, production API/database access, and durable image storage are still unverified; no publish was attempted.
-- Local direct HTTPS requests to Wikimedia Commons fail with Windows socket `10013` in this execution environment. The web lookup can inspect Commons pages, but no complete 100-model licensed-photo set and matching sourced specification/pricing manifest was available to validate or import. Consequently, the 100-card catalog remains unfinished.
+- After the PostgreSQL workflow, the local test DB had 16 integration fixtures. The 100 DEMO cards were then added and verified; the final custom-format backup is `qhi-auto-test-after-100-demo-final-6cc5ff1.dump` in the OS temp directory. No non-demo records were altered. `qhi-auto.netlify.app` ownership, production API/database access, and durable production image storage remain unverified; no publish was attempted.
+- Browser checks confirmed 100 catalog cards, 100 search results, working model search/category filters, 3 gallery entries on a detail page, RU/TG/EN pages, and mobile widths 320/390/768 without overflow. The sandbox blocked Unsplash image requests (`naturalWidth=0`); URL and metadata are present, but the actual pixels could not be verified from this network-restricted browser. The current browser therefore shows the cards and gallery entries but may show blank remote images until Unsplash is reachable.
 - Re-running the PostgreSQL workflow uncovered a comparison/favorites response bug after `image_details` was added to `CarOut`: `_localized_car` attempted to read that response field from the ORM model. It now serializes image credit metadata explicitly. PostgreSQL workflow passes (**1 passed**), the backend suite passes (**58 passed, 1 skipped**), and `alembic check` reports no drift.
+- The reusable, idempotent admin-API importer is [tools/seed_demo_inventory.py](tools/seed_demo_inventory.py). It creates the same 100-row demo set in the local database configured by `backend/.env`.
