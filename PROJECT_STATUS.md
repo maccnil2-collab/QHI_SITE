@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest code checkpoint: `92f9ea4` (`Pin frontend package manager toolchain`)
+- Latest committed code checkpoint: `38cbe16` (`Record current npm sandbox behavior`); frontend readiness changes are currently uncommitted
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented
@@ -16,7 +16,7 @@ Updated: 2026-11-01
 - Localized vehicle detail page/API added; catalog links to detail pages. Quote calculation now uses the session-aware CSRF client so signed-in estimates are associated with the customer's history.
 - Catalog empty-state copy now reports no matching vehicles instead of claiming the collection is not open yet; the contact shortcut has a localized accessible name.
 - ESLint flat config and Playwright desktop/mobile Chromium tests configured for locale/detail, registration/session restore, quote/order, CRM, and admin flows. The estimate test checks persistence without depending on a tariff label; missing DB fixtures fail clearly instead of silently skipping.
-- Frontend manifest declares npm `11.20.0` and Node `>=20.9.0`; dependencies are still unlocked and have not been installed in the Codex execution environment.
+- Frontend manifest pins npm `11.20.0` and Node `>=20.9.0`; dependency installation completed and `frontend/package-lock.json` was generated.
 - Ten Alembic revisions, ending at `0010_shared_rate_limit_buckets`.
 - Compose deployment starter with PostgreSQL, API, and frontend services.
 
@@ -38,12 +38,12 @@ Updated: 2026-11-01
 - Isolated database readiness and integration evidence are maintained in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md); PostgreSQL tests are explicitly opt-in and require a loopback database with a `*_test` name.
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
 - Root-level pytest invocation: **PASS** from repository root.
-- Frontend npm installation: **BLOCKED in the Codex shell**. Node 26.13.0/npm 11.20.0 run from `tools/nodejs`, but `npm ping` fails with `EACCES`; the owner reports `PONG` in their terminal. Offline cache is empty, install was stopped without creating `package-lock.json` or `node_modules`.
+- Frontend npm dependencies were installed by the owner with Node 26.13.0/npm 11.20.0; `frontend/package-lock.json` and `node_modules` are present. In this shell `npm ping` and `npm audit` still fail with `EACCES` to npm registry endpoints.
 
 ## Not verified
 
-- Next.js production build, full TypeScript semantic check, frontend lint, and Playwright. Tooling is configured, but the dependency-backed commands cannot run because `next`, `eslint`, and `playwright` are not installed.
-- Browser E2E and migration rollback. Production backup encryption, retention, and recovery procedures are also not established by the local test-database drill.
+- TypeScript typecheck, ESLint, and Next.js production build now pass. Playwright runs using installed system Chrome; locale/detail routes and CRM/admin journeys pass on desktop and mobile. Registration/session restore reaches the quote form, but the calculator E2E scenario fails because its required numeric input is empty at submit. Browser download from Playwright CDN is blocked with EACCES. `npm audit` cannot fetch advisory metadata, so dependency vulnerabilities remain to be confirmed/resolved.
+- The full account quote/order E2E scenario remains failing after session restore. Migration rollback is untested. Production backup encryption, retention, and recovery procedures are also not established by the local test-database drill.
 - Docker image builds, Compose health checks, TLS proxy behavior, and production deployment.
 
 The detailed current network/PostgreSQL diagnosis and journey matrix are in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md).

@@ -1,7 +1,15 @@
 # Frontend and database readiness check
 
 Date: 2026-11-01  
-Current code checkpoint: `92f9ea4` (`Pin frontend package manager toolchain`)
+Latest committed checkpoint: `38cbe16`; readiness work listed below is uncommitted.
+
+## Current frontend verification (2026-11-01)
+
+- Node/npm found at `tools/nodejs`: Node 26.13.0, npm 11.20.0. Owner completed installation (326 packages, exit 0); `frontend/package-lock.json` exists.
+- `npm run typecheck`: PASS. `npm run lint`: PASS with zero warnings. `npm run build`: PASS (Next.js 15.5.28; routes generated).
+- `npm audit --json`: BLOCKED because the audit endpoint request returns EACCES in this process. Playwright browser download is also BLOCKED with EACCES. Existing dependency report indicates PostCSS advisories and minimatch CVE-2026-118764; vulnerable installed paths include PostCSS 8.4.31 nested under Next and minimatch 10.2.6 (plus 3.1.5). Root PostCSS 8.5.32. Do not claim remediated pending lockfile-safe overrides and audit recheck.
+- PostgreSQL integration workflow: PASS (1 test) on loopback test database `qhi_auto_test`; no production database used.
+- Playwright on system Chrome: locale/detail and CRM/admin scenarios pass at desktop/mobile sizes (4/6 tests). Customer registration/session restoration ran, but quote form was empty at submit and the paired desktop/mobile scenarios fail. Running E2E requires the migration workflow first to seed an Integration car and tariff.
 
 ## npm registry diagnosis
 

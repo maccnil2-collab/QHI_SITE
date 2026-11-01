@@ -54,3 +54,11 @@ After the intake audit, added a root `pytest.ini` so the suite can be collected 
 - Added opt-in PostgreSQL workflow coverage. On a separate loopback-only PostgreSQL 18.6 cluster, migrations 0001–0009 applied successfully, `alembic check` found no drift, and the integration workflow passed for auth/session/CSRF, catalog, quote history, account saved vehicles, orders, CRM, and admin access.
 - Added ESLint and Playwright scripts/configuration and desktop/mobile workflow specs. npm registry access still fails at the socket layer with `EACCES`; lockfile generation, dependency resolution, typecheck, lint, Next build, and browser execution remain unverified.
 - Current checkpoint is `ec0d0c2`. The detailed evidence and test database instructions are in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md).
+
+## Frontend readiness follow-up (2026-11-01; base commit `38cbe16`)
+
+- Owner-installed frontend dependencies using Node 26.13.0/npm 11.20.0; npm lockfile is present. A dependency install was **not** completed by this execution shell; only checks against the shared installed `node_modules` ran.
+- TypeScript typecheck, ESLint, and Next production build pass.
+- npm audit cannot reach its security endpoint from this process (EACCES). Installed dependency paths include `next -> postcss@8.4.31` and minimatch `10.2.6`/`3.1.5`. Root PostCSS is 8.5.32. Current GitHub-reviewed advisories identify minimatch CVE-2026-118764 patched in 11.0.1 and multiple PostCSS advisories affecting versions through 8.5.22; this repo has not yet remediated/audit-verified the affected paths. References: [minimatch advisory](https://github.com/advisories/GHSA-g3hv-75wg-m249), [PostCSS advisory list](https://github.com/postcss/postcss/security/advisories).
+- Playwright via installed system Chrome: locale/detail and CRM/admin scenarios pass desktop/mobile. Customer registration and session restore proceed, but the calculator input is empty on submit; that customer journey remains failed. Browser download from Playwright CDN is blocked with EACCES.
+- PostgreSQL workflow passes on disposable loopback `qhi_auto_test`; production DB was not used.

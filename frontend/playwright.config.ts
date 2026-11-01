@@ -30,6 +30,7 @@ export default defineConfig({
   reporter: "list",
   outputDir: "./test-results",
   use: {
+    launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH },
     baseURL: webBase,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",

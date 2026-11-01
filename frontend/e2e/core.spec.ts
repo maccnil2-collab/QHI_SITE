@@ -47,9 +47,11 @@ test("customer registers, restores their session, saves a quote and creates an o
   await page.goto("/en");
   await page.getByLabel("Make, model or trim").fill("Integration");
   await page.getByRole("link", { name: car.localized_title ?? "Integration EV" }).first().click();
-  await page.getByLabel("Vehicle price in China, CNY").fill("10000");
+  const priceInput = page.getByLabel("Vehicle price in China, CNY");
+  await priceInput.fill("10000");
+  await expect(priceInput).toHaveValue("10000");
   await page.getByRole("button", { name: "Calculate estimate" }).click();
-  await expect(page.getByText("Estimated total in Dushanbe")).toBeVisible();
+  await expect(page.locator(".quote-total")).toBeVisible();
 
   await page.goto("/en/account");
   const savedEstimates = page.locator(".account-block").filter({ has: page.getByRole("heading", { name: "Cost estimates" }) });
@@ -83,7 +85,7 @@ test("staff manages a CRM lead and the admin catalog panel connects", async ({ p
   expect(promoted.ok(), await promoted.text()).toBeTruthy();
 
   await page.goto("/admin/crm");
-  await page.getByLabel("Language").selectOption("en");
+  await page.locator(".crm-language select").selectOption("en");
   await page.getByLabel("Email").fill(staffEmail);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();

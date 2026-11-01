@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { ContactTools } from "@/components/contact-tools";
 import { fetchCar, type Car } from "@/lib/api";
@@ -49,7 +50,7 @@ export function VehicleDetail({ locale, slug }: { locale: Locale; slug: string }
     <header className="header"><Link className="logo" href={`/${locale}`}><b>Q</b> QHI<span>AUTO</span></Link><Link className="contact-top" href={`/${locale}`}>{t.back}</Link></header>
     <section className="vehicle-hero wrap">
       <div className="vehicle-gallery">
-        {car.images.length > 0 ? car.images.map((image, index) => <img key={`${image}-${index}`} src={image} alt={`${title} ${index + 1}`} referrerPolicy="no-referrer"/>) : <div className="vehicle-image-placeholder">QHI AUTO / {car.year}</div>}
+        {car.images.length > 0 ? car.images.map((image, index) => <Image key={`${image}-${index}`} src={image} alt={`${title} ${index + 1}`} width={1200} height={900} unoptimized referrerPolicy="no-referrer"/>) : <div className="vehicle-image-placeholder">QHI AUTO / {car.year}</div>}
       </div>
       <div className="vehicle-summary"><div className="eyebrow dark">{car.brand} · {car.year}</div><h1>{title}</h1>{car.trim && <p className="vehicle-trim">{car.trim}</p>}<p className="vehicle-price">{money} <small>CNY</small></p><Link className="button" href="#vehicle-contact">{t.contact} ↗</Link></div>
     </section>
