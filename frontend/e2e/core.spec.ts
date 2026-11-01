@@ -99,3 +99,35 @@ test("staff manages a CRM lead and the admin catalog panel connects", async ({ p
   await page.locator(".admin-connect button").click();
   await expect(page.locator(".admin-tabs")).toBeVisible();
 });
+
+test("QHI CARE accepts customer tickets and staff can resolve them", async ({ page, request }) => {
+  const marker = randomUUID();
+  const subject = `E2E support ${marker}`;
+  const ticket = await request.post(`${apiUrl}/support/tickets`, { data: {
+    name: "QHI E2E Customer", email: `support-${marker}@example.test`, category: "technical",
+    subject, message: "Please help check this test support request.", locale: "en",
+  } });
+  expect(ticket.status(), await ticket.text()).toBe(201);
+
+  const staffEmail = `e2e-support-${marker}@example.test`;
+  const password = "QHI-E2E-Strong-Password-2026!";
+  const registration = await request.post(`${apiUrl}/auth/register`, { data: {
+    email: staffEmail, password, full_name: "QHI E2E Support Manager", preferred_locale: "en",
+  } });
+  expect(registration.status(), await registration.text()).toBe(201);
+  const staff = (await registration.json()).customer as { id: number };
+  const promoted = await request.patch(`${apiUrl}/admin/customers/${staff.id}/role`, {
+    headers: { "X-Admin-Token": process.env.QHI_E2E_ADMIN_API_KEY! }, data: { role: "manager" },
+  });
+  expect(promoted.ok(), await promoted.text()).toBeTruthy();
+
+  await page.goto("/admin/support");
+  const signInForm = page.locator(".support-admin form");
+  await signInForm.locator('input[type="email"]').fill(staffEmail);
+  await signInForm.locator('input[type="password"]').fill(password);
+  await signInForm.getByRole("button").click();
+  const ticketCard = page.locator(".support-admin article").filter({ has: page.getByRole("heading", { name: subject }) });
+  await expect(ticketCard).toBeVisible();
+  await ticketCard.getByLabel("Status").selectOption("resolved");
+  await expect(ticketCard.getByLabel("Status")).toHaveValue("resolved");
+});
