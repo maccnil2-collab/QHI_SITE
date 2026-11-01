@@ -26,6 +26,7 @@ Updated: 2026-11-01
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; nine migrations applied, head is `0009_crm_analytics_indexes`, 17 public tables.
 - `alembic check`: **PASS**, no model/schema differences.
 - PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM and admin access).
+- Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
 - Root-level pytest invocation: **PASS** from repository root.
 - Frontend npm installation: **BLOCKED** by `EACCES` reaching `registry.npmjs.org`.
 

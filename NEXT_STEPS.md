@@ -7,3 +7,5 @@
 5. **Production gate:** perform reviewed image builds, staging Compose checks, TLS/proxy verification, secret rotation, backup/restore drills, and monitoring setup. Do not expose the service publicly until these are complete and approved.
 
 Frontend commands for typecheck, lint, production build, and Playwright are configured but cannot run until dependencies are installed. See [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md) for actual network, PostgreSQL, and scenario results. Backend tests run from the repository root with `.\.venv\Scripts\python.exe -m pytest -q`; set `QHI_TEST_DATABASE_URL` to opt into the live PostgreSQL test.
+
+The local test PostgreSQL service and API currently run on loopback (`127.0.0.1:55439` and `127.0.0.1:8000`). The backend reads the ignored `backend/.env`; stop the local processes when they are no longer needed.

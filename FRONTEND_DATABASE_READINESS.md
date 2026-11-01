@@ -31,9 +31,11 @@ The vehicle detail route was added, and quote submission now uses the session-aw
 - The installed Windows service `postgresql-x64-18` on port 5432 remains unchanged. Anonymous/no-password authentication to it was rejected; no credentials were guessed.
 - A separate PostgreSQL 18.6 cluster was created under `%LOCALAPPDATA%\Temp\qhi-auto-pg-test-3333374`, bound only to `127.0.0.1:55439`. The dedicated `qhi_auto_test` database is UTF-8 and uses loopback-only local test authentication. The cluster was started directly because `pg_ctl` could not create a restricted token inside this environment.
 - DSN: `postgresql+psycopg://postgres@127.0.0.1:55439/qhi_auto_test`.
+- Ignored local `backend/.env` and `frontend/.env.local` files are configured for this test DB and the local API URL. A new random development `ADMIN_API_KEY` is stored only in ignored `backend/.env`; its value was not printed or committed.
 - All nine migrations applied to this fresh test database. `alembic current` reports `0009_crm_analytics_indexes`; 17 public tables exist. `alembic check` reports no model/schema differences.
 - The opt-in PostgreSQL API workflow test passed once. It covers registration, login/session restore, CSRF, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, and admin catalog authorization.
 - The isolated database now contains generated integration fixtures and workflow records. They were left intact. No production DB was contacted.
+- The API was started from `backend/` using only `backend/.env` on the normal local port `127.0.0.1:8000`; live `/health` and `/ready` returned `ok`/`ready` with database connected. It is currently running for local use.
 - Docker and Compose are unavailable in PATH. Compose/image/health checks remain unverified.
 
 ## User journey verification status
