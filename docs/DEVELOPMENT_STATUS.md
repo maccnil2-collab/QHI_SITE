@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Implemented
 - Takeover continuation at `ec0d0c2`: published vehicle detail API/page and catalog links added. Authenticated quote submission now sends cookie credentials and the session CSRF token through the shared API client, so saved estimates appear in the signed-in account.
 - ESLint flat configuration and scripts (`lint`, `test:e2e`, `test:e2e:ui`) added. Playwright desktop/mobile scenarios cover locale/detail navigation, customer registration/session restoration, quotes/orders, CRM lead management, and admin catalog connection. Dependency installation and execution are blocked by npm registry socket `EACCES`; no frontend pass is claimed.
-- Isolated PostgreSQL 18.6 test cluster created on `127.0.0.1:55439`, separate from the system service on 5432. All nine migrations applied to UTF-8 `qhi_auto_test`, revision head verified at `0009_crm_analytics_indexes`; `alembic check` reports no schema drift.
+- Isolated PostgreSQL 18.6 test cluster created on `127.0.0.1:55439`, separate from the system service on 5432. All ten migrations applied to UTF-8 `qhi_auto_test`, revision head verified at `0010_shared_rate_limit_buckets`; `alembic check` reports no schema drift.
 - Added an opt-in PostgreSQL API workflow test; it passed against the isolated test DB and covered registration/login/session restoration, CSRF, catalog search/filter/detail, saved quotes, favorites/comparison, orders, CRM lead intake/status/interactions/analytics, and admin catalog access.
 - The VS Code-bundled TypeScript compiler transpiled all 22 frontend TS/TSX files without syntax errors. This is syntax-only; semantic typecheck remains blocked by missing `tsc` package.
 - Current backend suite: 52 passed, 1 opt-in PostgreSQL test skipped in the default run; setting `QHI_TEST_DATABASE_URL` runs that separate PostgreSQL test (1 passed). Compileall and pip check pass.
@@ -20,7 +20,7 @@ Updated: 2026-11-01
 - CRM API and staff workspace source: public rate-limited lead intake, staff-only lead and interaction management, manager assignment, status workflow, and date-bounded analytics for lead cohorts/sources, manager workload, orders, and cost estimates. CRM UI supports ru/tg/en, order/logistics transitions, documents, and timelines. Conversion reports current status of leads created in the selected period; quote totals are estimates, not revenue. Browser build remains unverified.
 - Order documents: staff-only upload/list/download and customer download limited to explicitly visible documents. Local filesystem storage requires explicit `DOCUMENT_STORAGE_PATH`; uploads stream with a 10 MiB size cap, per-order quotas, PDF/JPEG/PNG signature checks, opaque storage keys, SHA-256 metadata, and private attachment downloads. Object storage and malware scanning remain for production.
 - Deployment starter includes non-root API (production dependencies only) and standalone Node 24 LTS Next.js container definitions, health checks, loopback-only web/API ports, a private PostgreSQL Compose network/volume, production API docs disabled, and a separate migration step. Docker/Compose is not installed here, so images and health checks remain unverified.
-- Alembic migration head `0009_crm_analytics_indexes` covers catalog, pricing, quote snapshots, identity, favorites/comparison, orders/events/doc metadata, CRM, notifications, document integrity, and date-range analytics indexes.
+- Alembic migration head `0010_shared_rate_limit_buckets` covers catalog, pricing, quote snapshots, identity, favorites/comparison, orders/events/doc metadata, CRM, notifications, document integrity, analytics indexes, and shared PostgreSQL rate limits.
 - 50 pytest tests pass; compileall passes; all nine migrations generate PostgreSQL offline DDL. OpenAPI exposes 40 paths including analytics, document access, liveness, database readiness, customer sessions/notifications, orders, CRM, and admin endpoints. API responses receive baseline anti-sniffing, clickjacking, referrer, and permissions headers.
 
 ## Not complete or not verified
@@ -29,10 +29,10 @@ Updated: 2026-11-01
 - Registration does not verify email yet. No outbound mail/SMS, password recovery, payment, or push-notification provider is configured; do not send transactional notices to unverified addresses.
 - Document upload uses an explicitly configured private filesystem path. Production needs durable object storage, malware scanning, retention policy, and operational restore tests before real customer documents are accepted.
 - Customer account/profile/order, public quote/enquiry, and CRM screens have source but no compiled browser verification. TypeScript semantic typecheck, Next production build, Playwright end-to-end checks, accessibility, and production performance/security checks remain. Source syntax was transpiled with the TypeScript compiler bundled in VS Code; this is not a typecheck.
-- Staff roles use the browser session flow; the bootstrap admin API key remains transitional. Production needs key rotation, distributed rate limiting, audit retention, and deployment review.
+- Staff roles use the browser session flow; the bootstrap admin API key remains transitional. Production needs key rotation, rate-limit retention/observability, audit retention, and deployment review.
 - There are no owner-confirmed inventory records, photos, exchange rates, or legal tariff values. None were fabricated.
 
 ## Next tasks
 1. Restore approved npm registry/mirror access, generate and review the frontend lockfile, then run `npm ci`, typecheck, lint, Next production build, and desktop/mobile Playwright flows.
 2. Add PostgreSQL concurrency/transaction tests for order transitions, ownership, notifications, and documents; verify migration rollback/forward-repair and backup restore in isolated infrastructure.
-3. Implement email verification/recovery, malware-scanned durable document storage, distributed rate limits, backups, monitoring, and deployment drills.
+3. Implement email verification/recovery, malware-scanned durable document storage, backups, monitoring, and deployment drills.

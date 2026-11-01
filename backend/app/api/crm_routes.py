@@ -22,7 +22,7 @@ def submit_lead(
     db: Session = Depends(get_db),
 ) -> LeadReceipt:
     host = request.client.host if request.client else "unknown"
-    lead_limiter.check(f"lead:{host}")
+    lead_limiter.check(f"lead:{host}", db)
     lead = CRMLead(
         customer_id=customer.id if customer else None,
         name=customer.full_name if customer else data.name,

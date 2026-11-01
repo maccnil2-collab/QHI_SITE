@@ -10,6 +10,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.engine import make_url
 
@@ -34,6 +35,7 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
     from app.core.passwords import hash_password
     from app.db.session import SessionLocal
     from app.main import app
+    from app.core.rate_limit import SlidingWindowLimiter
     from app.models import Car, CarTranslation, Customer, PricingTariff
 
     assert SessionLocal is not None
@@ -45,7 +47,7 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         current_database = db.scalar(text("SELECT current_database()"))
         revision = db.scalar(text("SELECT version_num FROM alembic_version"))
         assert current_database == make_url(_TEST_DATABASE_URL).database
-        assert revision == "0009_crm_analytics_indexes"
+        assert revision == "0010_shared_rate_limit_buckets"
 
         car = Car(
             slug=slug, brand="Integration", model="EV", trim="Test", year=2026,
@@ -69,6 +71,15 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         db.flush()
         car_id = car.id
         db.commit()
+
+    # Distinct limiter instances model separate application workers. The
+    # PostgreSQL counter must enforce the same cap across both instances.
+    limiter_key = f"integration-limit:{marker}"
+    with SessionLocal() as db:
+        SlidingWindowLimiter(max_requests=1, window_seconds=60).check(limiter_key, db)
+    with SessionLocal() as db, pytest.raises(HTTPException) as limited:
+        SlidingWindowLimiter(max_requests=1, window_seconds=60).check(limiter_key, db)
+    assert getattr(limited.value, "status_code", None) == 429
 
     with TestClient(app) as client:
         registered = client.post("/api/v1/auth/register", json={

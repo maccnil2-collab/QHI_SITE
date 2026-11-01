@@ -9,7 +9,7 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
 - [x] Localized responsive catalog and public cost-quote/enquiry forms (ru/tg/en source); build awaits npm registry access.
 - [ ] Install frontend dependencies from a lockfile, build, and typecheck (npm registry currently returns EACCES).
-- [ ] Apply migrations and run integration tests after `DATABASE_URL` is configured privately. Current migration head: `0009_crm_analytics_indexes`; Docker and Compose are not installed here.
+- [x] Apply all migrations through `0010_shared_rate_limit_buckets` and run the core API integration workflow on a dedicated loopback `*_test` database. Docker and Compose are not installed here.
 - [ ] Generate/review the npm lockfile, build and verify the frontend image, then exercise the Compose deployment and health checks. Starter instructions: `docs/DEPLOYMENT.md`.
 - [x] Initial API-key-protected admin catalog/tariff management and audit trail.
 - [x] Public itemized tariff-backed quote and rate-limited CRM enquiry API/UI source.

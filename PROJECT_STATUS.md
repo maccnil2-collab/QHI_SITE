@@ -15,7 +15,7 @@ Updated: 2026-11-01
 - RU/Tajik/EN source localization (`ru`, `tg`, `en`) and screens for catalog, account, CRM, and admin areas.
 - Localized vehicle detail page/API added; catalog links to detail pages. Quote calculation now uses the session-aware CSRF client so signed-in estimates are associated with the customer's history.
 - ESLint flat config and Playwright desktop/mobile tests configured for locale/detail, registration/session restore, quote/order, CRM, and admin flows.
-- Nine Alembic revisions, ending at `0009_crm_analytics_indexes`.
+- Ten Alembic revisions, ending at `0010_shared_rate_limit_buckets`.
 - Compose deployment starter with PostgreSQL, API, and frontend services.
 
 ## Verified in this takeover
@@ -24,7 +24,7 @@ Updated: 2026-11-01
 - Python compileall: **PASS**.
 - TypeScript/TSX syntax transpilation: **PASS (22 files)** using the VS Code-bundled compiler; this is syntax-only, not a semantic typecheck.
 - pip check: **PASS**.
-- Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; nine migrations applied, head is `0009_crm_analytics_indexes`, 17 public tables.
+- Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; ten migrations applied, head is `0010_shared_rate_limit_buckets`, schema check clean.
 - `alembic check`: **PASS**, no model/schema differences.
 - PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM and admin access).
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
@@ -43,6 +43,6 @@ The detailed current network/PostgreSQL diagnosis and journey matrix are in [FRO
 
 - Restore permitted npm registry access; create/review the lockfile, resolve dependency peers, and run the existing lint/typecheck/build/E2E scripts.
 - Run the configured browser journeys against the isolated PostgreSQL test database.
-- Before production: email verification/recovery, shared rate limiting, durable scanned document storage, backups and restore drills, monitoring, secret/key rotation, and deployment review.
+- Authentication, quote, lead, and document limits now use atomic PostgreSQL counters shared across API workers; hashed keys are stored in migration 0010. Still required before production: email verification/recovery, durable scanned document storage, backups and restore drills, monitoring, secret/key rotation, and deployment review.
 
 See [PROJECT_AUDIT.md](PROJECT_AUDIT.md) for the intake audit and [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) for the ordered next work.

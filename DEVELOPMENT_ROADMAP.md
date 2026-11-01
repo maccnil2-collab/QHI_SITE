@@ -18,14 +18,14 @@ Priorities are ordered by dependency and risk. Do not publish legal, tariff, inv
 ## 2. Verify persistence against PostgreSQL — basic workflows verified
 
 - Configure a private disposable test database without committing credentials.
-- Applied all migrations through `0009_crm_analytics_indexes` on an isolated fresh database; `alembic check` reports no schema drift.
+- Applied all migrations through `0010_shared_rate_limit_buckets` on an isolated test database; `alembic check` reports no schema drift. PostgreSQL rate limits are atomic and shared between workers.
 - One API integration workflow covers sessions, quotes, orders, CRM, and admin. Add targeted concurrency/transaction tests for order transitions, document metadata, and ownership.
 - Establish backup/restore and forward-repair procedures before production data.
 
 ## 3. Close identity and security gaps
 
 - Design email verification and password recovery, with token expiry, single-use semantics, rate limits, and an approved mail adapter.
-- Replace process-local rate limits where multi-worker deployment is required.
+- Add automated retention/observability for rate-limit buckets and tune limits behind a production reverse proxy.
 - Review staff session lifecycle, admin bootstrap-key migration/rotation, audit retention, proxy trust, CORS, and security headers.
 - Add browser-level CSRF and cross-origin regression coverage.
 

@@ -59,7 +59,7 @@ def _auth_response(customer: Customer, db: Session, response: Response) -> AuthR
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register(data: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
     _check_auth_origin(request)
-    register_limiter.check(_rate_key(request, "register"))
+    register_limiter.check(_rate_key(request, "register"), db)
     customer = Customer(
         email_normalized=data.email,
         password_hash=hash_password(data.password.get_secret_value()),
@@ -82,7 +82,7 @@ def register(data: RegisterRequest, request: Request, response: Response, db: Se
 @router.post("/login", response_model=AuthResponse)
 def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
     _check_auth_origin(request)
-    login_limiter.check(_rate_key(request, "login"))
+    login_limiter.check(_rate_key(request, "login"), db)
     email = data.email.strip().lower()
     customer = db.scalar(select(Customer).where(Customer.email_normalized == email))
     encoded = customer.password_hash if customer else _dummy_hash()
@@ -234,7 +234,7 @@ async def upload_staff_order_document(
     storage_root = settings.document_storage_path
     if storage_root is None or not storage_root.is_absolute():
         raise HTTPException(status_code=503, detail="Document storage is not configured")
-    document_limiter.check(f"documents:{context.customer.id}")
+    document_limiter.check(f"documents:{context.customer.id}", db)
     order = db.scalar(select(VehicleOrder).where(VehicleOrder.id == order_id).with_for_update())
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")

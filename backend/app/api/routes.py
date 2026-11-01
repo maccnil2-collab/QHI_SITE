@@ -89,7 +89,7 @@ def get_car(slug: str, locale: Literal["ru", "tg", "en"] = "ru", db: Session = D
 @router.post("/quotes", response_model=QuoteOut)
 def quote(data: QuoteRequest, request: Request, db: Session = Depends(get_db), customer: Customer | None = Depends(get_optional_customer)) -> QuoteOut:
     host = request.client.host if request.client else "unknown"
-    quote_limiter.check(f"quote:{host}")
+    quote_limiter.check(f"quote:{host}", db)
     tariff = db.scalar(select(PricingTariff).where(PricingTariff.active.is_(True), PricingTariff.effective_on <= date.today()).order_by(PricingTariff.effective_on.desc()))
     if tariff is None:
         raise HTTPException(status_code=503, detail="No current pricing tariff is configured")
