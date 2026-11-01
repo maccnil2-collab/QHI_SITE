@@ -1,7 +1,7 @@
 # Frontend and database readiness check
 
 Date: 2026-11-01  
-Current checkpoint: `5590446` (`Update current project checkpoint`)
+Current checkpoint: `a25c10a` (`Harden mobile and estimate browser checks`)
 
 ## npm registry diagnosis
 

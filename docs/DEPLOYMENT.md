@@ -45,5 +45,5 @@ The compose configuration uses named volumes for PostgreSQL and uploaded order d
 
 - The frontend lockfile and all Next.js build/browser verification are still missing because npm registry access has failed in this environment.
 - Docker is not installed on the development machine, so image builds and Compose health checks have not been executed here.
-- No private database credentials are configured, so migrations have only been validated as offline SQL and not applied to PostgreSQL.
-- Browser cookie session restoration and CSRF protection are implemented in source but still need full frontend build and browser verification. Email verification/recovery, durable scanned document storage, distributed rate limiting, operational backups, and production monitoring remain release requirements.
+- All ten migrations and core API journeys have passed on a dedicated loopback PostgreSQL test database. No production database was accessed; production credentials, staging, and deployment behavior remain unverified.
+- Browser cookie session restoration and CSRF protection are implemented in source but still need a successful frontend build and browser verification. PostgreSQL-backed shared rate limits are implemented; retention/observability, email verification/recovery, durable scanned document storage, operational backups, and production monitoring remain release requirements.
