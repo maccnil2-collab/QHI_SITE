@@ -1,21 +1,19 @@
-# Архитектура QHI AUTO
+# QHI AUTO Architecture
 
-## Сервисы
-- `frontend/`: Next.js App Router, React, TypeScript, Tailwind CSS; маршруты локализованы `/ru`, `/tg`, `/en`.
-- `backend/`: FastAPI, Pydantic и SQLAlchemy 2; API под `/api/v1`.
-- PostgreSQL 18: транзакционные сущности каталога, клиентов, заказов, расчётов и CRM.
-- Alembic: версионируемые миграции схемы.
+## Services
+- `frontend/`: Next.js App Router, React, TypeScript, Tailwind CSS; locale routes `/ru`, `/tg`, `/en`.
+- `backend/`: FastAPI, Pydantic, SQLAlchemy 2; versioned API under `/api/v1`.
+- PostgreSQL 18: transactional catalog, users, orders, quotes, and CRM data.
+- Alembic: versioned schema migrations.
 
-## Границы доменов
-Catalog (марки, модели, комплектации, характеристики, изображения, доступность); Pricing (версионируемые тарифы и снимок расчёта); Identity (клиенты, роли, сессии); Orders & Logistics (заказы, события статусов, документы, уведомления); CRM (лиды, контакты, взаимодействия, назначения); Admin (разрешения, справочники, аудит); i18n (полные словари интерфейса и переводимые поля сущностей).
+## Domain boundaries
+Catalog (makes, models, trims, specifications, images, availability); Pricing (versioned tariffs and immutable quote snapshots); Identity (customers, staff roles, sessions); Orders and Logistics (orders, events, documents, notifications); CRM (leads, contacts, interactions, assignments); Admin (permissions, dictionaries, audit); i18n (complete interface dictionaries and translated entity fields).
 
-## Ключевые решения
-- Денежные суммы хранятся как Decimal с валютой и источником/датой курса. Ставки пошлин и прочие юридически значимые тарифы не задаются по умолчанию и имеют дату актуальности.
-- Каждая смета сохраняет входные данные, версии тарифов и дату; изменение тарифов не меняет ранее выданную смету.
-- PostgreSQL обязателен для production. SQLite допустим только для изолированных unit-тестов, если драйвер установлен.
-- Публичные endpoints не раскрывают внутренние заметки CRM. Админские действия требуют роли и аудита.
-- Фотографии хранятся как URL/объекты хранения с метаданными, а не как большие бинарные поля в строках каталога.
-- API версионируется; контракты задаются Pydantic-схемами.
-
-## Данные и интеграции
-Платёжные, таможенные, курьерские и уведомительные интеграции подключаются через интерфейсы адаптеров. До отдельного решения владельца нет реальных платежей, автоматических юридических расчётов или отправки сообщений.
+## Decisions
+- Store money as Decimal with currency and exchange-rate source/date.
+- Customs rates, customs calculation basis, and other legal/commercial tariffs have no defaults and carry an effective date. Incomplete tariffs prevent quoting.
+- A quote stores its input, tariff version, and date so future tariff edits do not rewrite a prior quote.
+- PostgreSQL is required in production. SQLite is allowed only for isolated unit tests when a driver is available.
+- Public APIs never expose private CRM notes. Administrative operations require authorization and audit.
+- Images use external/object-storage URLs and metadata, not large database blobs.
+- Payment, customs, courier, and notification providers sit behind adapters. No real payments or outbound messages are enabled by default.

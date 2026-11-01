@@ -1,23 +1,24 @@
-# QHI AUTO — главный план
+# QHI AUTO Master Plan
 
-## Цель
-Создать расширяемую платформу для продажи электромобилей из Китая с доставкой в Душанбе. Коммерческие тарифы, наличие, цены, сроки, документы и юридические утверждения публикуются только после подтверждения владельцем бизнеса.
+## Objective
+Deliver an extensible commercial platform for electric vehicles sourced in China and delivered to Dushanbe. Publish real availability, tariffs, legal claims, prices, delivery dates, and documents only after owner verification.
 
-## Этапы и контрольные точки
-- [x] Диагностика проекта, Python-окружения, локальных Node/Git и PostgreSQL.
-- [x] Архитектура и правила безопасности.
-- [ ] Базовая структура API, конфигурация, модель каталога и калькулятора.
-- [ ] Frontend Next.js с локалями ru/tg/en, адаптивной оболочкой и каталогом.
-- [ ] Миграции Alembic, PostgreSQL integration и управляемые тарифы.
-- [ ] Пользователи, безопасная аутентификация, избранное и сравнение.
-- [ ] Заказы, логистика, документы и уведомления.
-- [ ] CRM, менеджеры и административные права.
-- [ ] Полная локализация, доступность и аналитика.
-- [ ] Комплексные API, UI, security и performance проверки.
-- [ ] Подготовка конфигурации развёртывания и эксплуатационной документации.
+## Milestones
+- [x] Project, Python environment, local Node/Git, and PostgreSQL diagnostics.
+- [x] Architecture, directory layout, and security baseline.
+- [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
+- [x] Localized responsive catalog source (ru/tg/en); build awaits npm registry access.
+- [ ] Install frontend dependencies from a lockfile, build, and typecheck.
+- [ ] Apply migrations and run integration tests with private application DB credentials.
+- [ ] Admin catalog/tariff management with role-based access and audit trail.
+- [ ] Customer identity, profiles, favorites, and persisted comparisons.
+- [ ] Orders, logistics events, documents, notifications.
+- [ ] CRM leads, customer interactions, manager assignments, analytics.
+- [ ] Complete localization, accessibility, performance, and security checks.
+- [ ] Deployment, backup/restore, monitoring, and operations guide.
 
-## Выполнение
-Работать небольшими вертикальными срезами. Для каждого среза обновлять `DEVELOPMENT_STATUS.md`, выполнять доступные проверки и фиксировать правки в Git. При отсутствии внешних бизнес-данных оставлять конфигурацию незаполненной, а не придумывать условия.
+## Working method
+Deliver vertical slices. Run the relevant tests after each change, record only real results in `docs/DEVELOPMENT_STATUS.md`, and commit working checkpoints. Do not invent commercial/legal data. Keep user-owned files outside the Git checkpoint unless required.
 
-## Текущий приоритет
-Создать каталог автомобилей и калькулятор с явно настраиваемыми тарифами, используя установленное окружение без повторной установки зависимостей. Следом проверить UI/API/PostgreSQL вертикально.
+## Current blockers
+npm registry access returns EACCES. PostgreSQL is running but requires a private password. Keep implementation moving on tasks that do not depend on either blocker.

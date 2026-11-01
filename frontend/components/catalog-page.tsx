@@ -7,7 +7,8 @@ const number = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
 export function CatalogPage({ locale }: { locale: Locale }) {
  const t=getMessages(locale); const [cars,setCars]=useState<Car[]>([]); const [selected,setSelected]=useState<Car[]>([]); const [query,setQuery]=useState(""); const [brand,setBrand]=useState(""); const [min,setMin]=useState(""); const [max,setMax]=useState(""); const [range,setRange]=useState(""); const [status,setStatus]=useState("loading"); const [compareOpen,setCompareOpen]=useState(false);
  const load=useCallback((signal:AbortSignal)=>{const p=new URLSearchParams(); if(query.trim())p.set("q",query.trim()); if(brand)p.set("brand",brand); if(min)p.set("min_price_cny",min); if(max)p.set("max_price_cny",max); if(range)p.set("min_range_km",range); setStatus("loading"); fetchCars(p,signal).then((data)=>{setCars(data);setStatus("ready")}).catch((e:unknown)=>{if(!(e instanceof DOMException&&e.name==="AbortError"))setStatus("error")})},[query,brand,min,max,range]);
- useEffect(()=>{document.documentElement.lang=locale;const c=new AbortController();const id=window.setTimeout(()=>load(c.signal),200);return()=>{window.clearTimeout(id);c.abort()}},[load]);
+ useEffect(()=>{document.documentElement.lang=locale},[locale]);
+ useEffect(()=>{const c=new AbortController();const id=window.setTimeout(()=>load(c.signal),200);return()=>{window.clearTimeout(id);c.abort()}},[load]);
  const brands=useMemo(()=>[...new Set(cars.map(c=>c.brand))].sort(),[cars]);
  const toggle=(car:Car)=>setSelected((old)=>old.some(x=>x.id===car.id)?old.filter(x=>x.id!==car.id):old.length<3?[...old,car]:old);
  const ask=(key:string)=>t[key as keyof typeof t] as string;

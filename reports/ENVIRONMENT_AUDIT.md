@@ -1,32 +1,32 @@
-# Аудит среды разработки
+# Development Environment Audit
 
-Дата: 2026-11-01. Проверено в каталоге `C:\Users\Asus Notebook\QHI-AUTO`.
+Date: 2026-11-01. Project: `C:\Users\Asus Notebook\QHI-AUTO`.
 
-| Инструмент | Результат |
+| Component | Result |
 |---|---|
-| Python | 3.11.9 |
-| `.venv` | Существует; запуск через `.venv\Scripts\python.exe` работает |
+| Python / venv | Python 3.11.9; project `.venv` works |
 | FastAPI | 0.162.0 |
 | SQLAlchemy | 2.1.6 |
 | Alembic | 1.20.1 |
 | Pydantic | 2.14.2 |
-| psycopg / psycopg-binary | 3.3.6 / 3.3.6 |
+| psycopg / binary | 3.3.6 / 3.3.6 |
 | pytest | 9.2.0 |
-| Node.js (локально в tools) | 26.13.0 |
-| npm (локально в tools) | 11.20.0 |
-| Git (portable в tools) | 2.56.0.windows.4 |
-| PostgreSQL | Установлена служба `postgresql-x64-18`, состояние Running; серверную версию/подключение ещё проверить |
-| Next.js / React / TypeScript / Tailwind | Ещё не установлены в проекте |
-| Playwright | Ещё не найден в `.venv`/проекте |
-| VS Code / Figma / Windows build / RAM / свободный диск | Не проверены в этом аудите |
+| Node.js / npm | Project-local 26.13.0 / 11.20.0 |
+| Git | Portable 2.56.0.windows.4 |
+| PostgreSQL | Service `postgresql-x64-18` is Running; pg_isready reports localhost:5432 accepting connections |
+| Next.js / React / TypeScript / Tailwind | Manifest created; packages and lockfile unavailable because npm registry returns EACCES |
+| Playwright | Not found in venv/project |
+| VS Code / Figma / Windows build / RAM / free disk | Not checked in this project audit |
 
-Пути portable Node и Git находятся в `tools/` проекта; глобальный PATH не менялся. PostgreSQL-инсталлятор присутствует в `downloads/`, повторно не запускался. В репозитории не сохранялись секреты. Размер исходных portable tools/installer не суммировался; новые установки в рамках данного этапа не выполнялись.
+Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 installer already exists in `downloads/`; it was not rerun. No new programs were installed. Existing `test.txt` remains untouched and untracked. Secrets were not stored.
 
-## Проверки
-- Успешно запущены версии Python, Node.js, npm и Git.
-- Успешно прочитан список зависимостей `.venv`.
-- Состояние службы PostgreSQL 18: Running.
-- Git repository initialized; команда `git config` через portable Git завершилась сообщением `fatal: not in a git directory`, несмотря на успешный `git init`; фиксации пока нет.
+## Checks performed
+- Python, Node.js, npm, Git versions and venv package inventory succeeded.
+- PostgreSQL service is Running and accepts TCP connections. `psql -w` without a password was rejected; no password was attempted.
+- Six API/pricing tests passed; compileall passed; Alembic offline SQL generation/history passed.
+- Uvicorn smoke test returned HTTP 200 from `/api/v1/health`.
+- Translation dictionaries decoded as UTF-8 and contain 53 matching keys per locale.
+- npm registry lookup failed with EACCES. Next.js build, DB migration against the running server, and Playwright tests were not run.
 
-## Ограничения
-Окружение ранее блокировало системный `winget.exe` и сетевые подключения pip. Для работы используем уже имеющиеся локальные инструменты и зависимости. Системные настройки не меняются.
+## Constraints
+The execution environment previously blocked winget and pip network access. Work uses existing local tools and dependencies. No Windows system settings were changed.
