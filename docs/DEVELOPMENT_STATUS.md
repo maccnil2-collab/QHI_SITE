@@ -9,7 +9,7 @@ Updated: 2026-11-01
 - Admin API and web surfaces for cars, customer/staff roles, and tariff versions. Admin key is required, constant-time compared, kept in browser memory, and role changes are audited. The final active administrator cannot be removed.
 - Customer API and localized account screen source: registration/login, scrypt password hashes, hashed bearer-session storage, expiry/revocation, profile edits, quote history, favorites, saved comparisons, order requests and cancellation. The UI is wired to the API but cannot be built until npm dependencies are available. Customers cannot set their own role.
 - Orders API: create/list/detail/cancel within the customer's own scope; staff status changes use explicit transitions and row locks. Customer responses omit internal staff notes.
-- CRM API: public rate-limited lead intake, staff-only lead and interaction views/edits, manager assignment, status workflow, and aggregate lead/order counts. CRM web UI is not implemented yet.
+- CRM API and initial staff workspace source: public rate-limited lead intake, staff-only lead and interaction views/edits, manager assignment, status workflow, aggregate lead/order counts, and a staff login/lead management page. UI is currently English-only and uncompiled; manager assignment is by user ID.
 - Alembic migration head `0006_crm` covers catalog, pricing, quote snapshots, identity, favorites/comparison, orders/events/doc metadata, and CRM.
 - 23 pytest tests pass; compileall passes; all six migrations generate PostgreSQL offline DDL. A real Uvicorn process serves OpenAPI with 28 routes, including auth, order, CRM, and admin endpoints.
 
@@ -18,12 +18,12 @@ Updated: 2026-11-01
 - PostgreSQL TCP readiness is confirmed, but authentication needs a private password. Migrations have not been applied to the running DB; SQLAlchemy CRUD, transaction, and PostgreSQL integration tests remain unverified.
 - Registration does not verify email yet. No outbound mail/SMS, password recovery, payment, or push-notification provider is configured; do not send transactional notices to unverified addresses.
 - Order-document table is metadata only; secure object storage/upload/download is not integrated.
-- Customer account/profile/order screens have source but no compiled browser verification. CRM web UI, Playwright end-to-end checks, accessibility, and production performance/security checks remain.
+- Customer account/profile/order and initial CRM screens have source but no compiled browser verification. CRM translations, Playwright end-to-end checks, accessibility, and production performance/security checks remain.
 - Staff role guards exist, but auth/admin currently use separate bearer sessions and bootstrap API key; production hardening, key rotation, distributed edge rate limiting, and audit retention need follow-up.
 - There are no owner-confirmed inventory records, photos, exchange rates, or legal tariff values. None were fabricated.
 
 ## Next tasks
 1. Connect to PostgreSQL using credentials stored privately in `backend/.env`, apply migrations, and run real DB integration/transaction/ownership tests.
 2. Restore npm registry access, install and lock frontend dependencies, then build/typecheck and repair reported issues.
-3. Build the CRM web UI, install frontend dependencies when registry access is restored, then run typecheck/build and Playwright flows.
+3. Localize the CRM UI, install frontend dependencies when registry access is restored, then run typecheck/build and Playwright flows.
 4. Implement email verification/recovery, staff session management, secure document storage, production rate limits, deployment/backup/restore/monitoring.
