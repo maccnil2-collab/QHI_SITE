@@ -8,8 +8,8 @@ Updated: 2026-11-01
 - PostgreSQL 18 service is running and accepts connections. Authentication requires a password; no secret was requested, read, or stored.
 - Implemented health endpoint, SQLAlchemy catalog/image/translation/tariff/audit models, filtered catalog endpoint, tariff-safe cost calculation, initial Alembic migrations, and API-key-protected car/tariff management with change audit. A responsive web admin form can add cars and tariff versions, publish/unpublish vehicles, and activate tariffs. Administrative access fails closed unless a private 32+ character key is configured; the key remains in page memory only.
 - Added localized Next.js source for ru/tg/en, responsive catalog filters, empty/error states, and in-memory comparison of up to three cars. Translation dictionary has 53 matching keys per locale and passed a runtime Unicode/newline check.
-- Nine API/pricing/admin-guard/CORS tests pass. Python compileall passes. Alembic offline DDL and history pass. A real Uvicorn smoke check returned HTTP 200 from health.
-- Git main checkpoints: `8d6b181`, `9e90e23`, `bb64608`, `f9312cc`; current admin work is pending commit.
+- Nine API/pricing/admin-guard/CORS tests pass. Python compileall passes. Alembic offline DDL and history pass. A real Uvicorn smoke check returned HTTP 200 from `/api/v1/health` and `/openapi.json`; OpenAPI lists catalog and admin endpoints.
+- Git main checkpoints: `8d6b181`, `9e90e23`, `bb64608`, `f9312cc`, `23b17a2`.
 
 ## Blocked or not verified
 - npm registry returns EACCES. Next/React/Tailwind are not installed; there is no lockfile. Build and typecheck have not run.
