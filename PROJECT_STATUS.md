@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest code checkpoint: `1c3eab3` (`Fix localized catalog empty state`)
+- Latest code checkpoint: `14f71a2` (`Test customer denial on staff workflows`)
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented
@@ -30,7 +30,7 @@ Updated: 2026-11-01
 - Populated PostgreSQL backup/restore: **PASS** into `qhi_auto_restore_utf8_test`; all 18 table row counts and deterministic content hashes match, including Tajik text. An initial restore into a Windows-default `WIN1251` target failed on UTF-8; the partial test target and artifacts were retained.
 - `alembic check`: **PASS**, no model/schema differences.
 - Alembic now reads ignored `backend/.env` for local commands; `alembic current` and `alembic check` both pass without exporting `DATABASE_URL` manually.
-- PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM, admin editing/publication, and shared rate-limit checks across independent instances and concurrent requests).
+- PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, explicit denial of customer sessions on staff routes, catalog/search/detail, quote/history, favorites/comparison, order, CRM, admin editing/publication, and shared rate-limit checks across independent instances and concurrent requests).
 - The PostgreSQL workflow also passed against the populated UTF-8 restore clone, confirming the restored database serves the same API paths.
 - Fresh Uvicorn process on loopback port 18001: **PASS**; readiness connected to the isolated test DB and live login requests returned eight `401` responses followed by `429` at the configured limit. Temporary process was stopped after the check.
 - Isolated database readiness and integration evidence are maintained in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md); PostgreSQL tests are explicitly opt-in and require a loopback database with a `*_test` name.

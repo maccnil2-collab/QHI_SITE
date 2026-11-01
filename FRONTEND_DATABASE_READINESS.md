@@ -1,7 +1,7 @@
 # Frontend and database readiness check
 
 Date: 2026-11-01  
-Current code checkpoint: `1c3eab3` (`Fix localized catalog empty state`)
+Current code checkpoint: `14f71a2` (`Test customer denial on staff workflows`)
 
 ## npm registry diagnosis
 
@@ -35,7 +35,7 @@ The vehicle detail route was added, and quote submission now uses the session-aw
 - DSN: `postgresql+psycopg://postgres@127.0.0.1:55439/qhi_auto_test`.
 - Ignored local `backend/.env` and `frontend/.env.local` files are configured for this test DB and the local API URL. A new random development `ADMIN_API_KEY` is stored only in ignored `backend/.env`; its value was not printed or committed.
 - All ten migrations applied to this fresh test database. `alembic current` reports `0010_shared_rate_limit_buckets`; `alembic check` reports no model/schema differences.
-- The opt-in PostgreSQL API workflow test passed and covers registration, login/session restore, CSRF, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, admin edit/publication round trips, admin catalog authorization, and shared/concurrent PostgreSQL rate limits.
+- The opt-in PostgreSQL API workflow test passed and covers registration, login/session restore, CSRF, customer-to-staff access denial, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, admin edit/publication round trips, admin catalog authorization, and shared/concurrent PostgreSQL rate limits.
 - The same workflow also passed against the populated UTF-8 restore clone (`qhi_auto_restore_utf8_test`), including Tajik localized catalog data. It added only uniquely marked test fixtures to the clone; the source database was not modified by this run.
 - The isolated database now contains generated integration fixtures and workflow records. They were left intact. No production DB was contacted.
 - Populated backup/restore drill: **PASS**. A custom-format `pg_dump` of the isolated `qhi_auto_test` was restored into a new UTF-8 database `qhi_auto_restore_utf8_test` (created from `template0`). All 18 public tables matched the source in exact row counts and deterministic row-content hashes; both databases report `0010_shared_rate_limit_buckets`. Representative source/restored counts: cars 13/13, customers 13/13, quotes 14/14, orders 13/13, CRM leads 12/12. This caught a Windows client-encoding issue: an initial restore into a database created with default `WIN1251` stopped on UTF-8 Tajik text. That partial test database (`qhi_auto_restore_data_test`), the earlier empty restore target (`qhi_auto_restore_test`), and backup artifacts were preserved and must not be treated as valid restore targets. The successful restore used a fresh `template0`/UTF-8 target and `PGCLIENTENCODING=UTF8`. No production DB was contacted.

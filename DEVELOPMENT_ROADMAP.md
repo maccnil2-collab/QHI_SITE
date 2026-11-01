@@ -2,7 +2,7 @@
 
 Priorities are ordered by dependency and risk. Do not publish legal, tariff, inventory, or delivery claims without owner-provided values.
 
-## Progress at checkpoint `1c3eab3`
+## Progress at checkpoint `14f71a2`
 
 - Completed: isolated PostgreSQL test cluster; all ten migrations applied; schema/model comparison clean; PostgreSQL API workflow test passes, including concurrent shared rate-limit requests.
 - Completed: localized vehicle detail route, catalog navigation, and authenticated quote persistence; ESLint and desktop/mobile Playwright source configuration added.
@@ -10,6 +10,7 @@ Priorities are ordered by dependency and risk. Do not publish legal, tariff, inv
 - Blocked: npm registry socket access (`EACCES` before HTTP), so lockfile, installed toolchain, semantic typecheck, lint, Next build, and browser execution remain outstanding.
 - Fixed TypeScript issues found by the bundled compiler: duplicate CRM dictionary keys, missing CRM loading/error labels, and the admin car `published` field omitted from the API response. The isolated locale-dictionary typecheck passes; full app check still cannot resolve absent dependencies.
 - Fixed admin vehicle edits failing with a PostgreSQL unique violation: existing locale rows are now updated in place. The live integration workflow now verifies edit and publish/unpublish round trips.
+- Customer sessions now have explicit PostgreSQL integration assertions returning 403 on CRM lead/overview and staff order routes; the workflow passes on both the source and restored test database.
 
 ## 1. Establish reproducible frontend verification — in progress
 
