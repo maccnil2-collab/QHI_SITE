@@ -28,3 +28,5 @@ Updated: 2026-11-01
 2. Restore npm registry access, install and lock frontend dependencies, then build/typecheck and repair reported issues.
 3. Install frontend dependencies when registry access is restored, then run typecheck/build and Playwright flows.
 4. Implement email verification/recovery, staff session management, object storage/malware scanning, production rate limits, deployment/backup/restore/monitoring.
+
+- Admin catalog, tariff, and customer/staff role screens now include Russian, Tajik, and English UI dictionaries with an in-panel language selector. Frontend TS/TSX parser check: 18 files, zero syntax errors; backend pytest: 46 passed. Next build and browser behavior still require dependency installation.

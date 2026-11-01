@@ -22,7 +22,7 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Localize the initial CRM management UI and provide active manager selection.
 - [x] Add staff-only date-bounded CRM analytics for lead cohort conversion, sources, manager workload, order statuses, and quote estimates.
 - [ ] Verify CRM analytics in a browser and add event-time attribution where business definitions require conversion-date reporting.
-- [ ] Complete localization, accessibility, performance, and security checks.
+- [ ] Review localization quality across all screens, accessibility, performance, and security checks. Admin catalog/tariff/customer-role screens now have ru/tg/en dictionaries; browser verification remains pending.
 - [ ] Deployment, backup/restore, monitoring, and operations guide.
 
 ## Working method
