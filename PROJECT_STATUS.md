@@ -4,7 +4,7 @@ Updated: 2026-11-02
 
 ## Current verified status (2026-11-02)
 
-- Latest committed source checkpoint: `9e1783c` (`Cover QHI Care ticket and staff resolution flow`), followed in this work by a pending quote hydration-race fix. It includes `2892217` (isolated Playwright build output), `5e88ff9` (restrict demo import to `qhi_auto_demo`), and `20f7f0d` (100 localized DEMO vehicles).
+- Latest committed source checkpoint: `921e011` (`Fix quote form hydration race`). It includes `9e1783c` (QHI CARE staff resolution), `2892217` (isolated Playwright build output), `5e88ff9` (restrict demo import to `qhi_auto_demo`), and `20f7f0d` (100 localized DEMO vehicles).
 - Local servers are running: API `http://127.0.0.1:8001/api/v1`, frontend `http://localhost:3000/ru`. `/ready` and the site both return HTTP 200.
 - The isolated UTF-8 database `qhi_auto_demo` contains exactly 100 published cars with `is_demo=true`, 300 image metadata rows, and an explicitly illustrative DEMO tariff. It has no customer accounts. The separate `qhi_auto_app_test` database contains workflow/E2E test fixtures and test-generated records; backups were made to the local temp directory before those workflows. Do not copy test rows into the demo database.
 - Catalog API verification returned all 100 cards in RU/TG/EN; brand search, category filtering, USD/TJS values, and three-image gallery metadata per car passed. Browser verification rendered 100 cards, opened a detail page with three gallery entries, and found no mobile horizontal overflow.
