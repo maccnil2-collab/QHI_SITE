@@ -5,6 +5,7 @@ ends in `_test`. This deliberately refuses remote or ambiguously named targets.
 """
 
 import os
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from decimal import Decimal
 from uuid import uuid4
@@ -80,6 +81,22 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
     with SessionLocal() as db, pytest.raises(HTTPException) as limited:
         SlidingWindowLimiter(max_requests=1, window_seconds=60).check(limiter_key, db)
     assert getattr(limited.value, "status_code", None) == 429
+
+    concurrent_key = f"integration-concurrent-limit:{marker}"
+
+    def attempt_limited_request() -> bool:
+        with SessionLocal() as db:
+            try:
+                SlidingWindowLimiter(max_requests=3, window_seconds=60).check(concurrent_key, db)
+            except HTTPException as error:
+                if error.status_code == 429:
+                    return False
+                raise
+            return True
+
+    with ThreadPoolExecutor(max_workers=8) as workers:
+        accepted = list(workers.map(lambda _: attempt_limited_request(), range(8)))
+    assert sum(accepted) == 3
 
     with TestClient(app) as client:
         registered = client.post("/api/v1/auth/register", json={

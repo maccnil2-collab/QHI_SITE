@@ -42,7 +42,7 @@ Branch and base checkpoint: `main`, `666ff552d5bd6fb0545ceaf3fcd33ef06e4f9169` (
 
 ### Follow-up update (2026-11-01)
 
-- Added migration `0010_shared_rate_limit_buckets`. Authentication, quote, CRM lead, and order-document rate limits now use atomic PostgreSQL counters with SHA-256 digests for keys. A live test confirmed separate limiter instances enforce one shared cap. SQLite/unit tests retain the in-memory fallback. This closes finding 4 for PostgreSQL-backed deployments; PostgreSQL availability is required to enforce the limits, and requests fail closed if the counter store is unavailable.
+- Added migration `0010_shared_rate_limit_buckets`. Authentication, quote, CRM lead, and order-document rate limits now use atomic PostgreSQL counters with SHA-256 digests for keys. Live tests confirmed separate limiter instances share the cap and only the configured number of simultaneous requests are accepted. SQLite/unit tests retain the in-memory fallback. This closes finding 4 for PostgreSQL-backed deployments; PostgreSQL availability is required to enforce the limits, and requests fail closed if the counter store is unavailable.
 - All ten migrations and `alembic check` pass on the isolated test database; current revision is `0010_shared_rate_limit_buckets`.
 
 After the intake audit, added a root `pytest.ini` so the suite can be collected from the repository root without manually changing Python paths. Re-running pytest from the root after this change produced **50 passed** (same deprecation warning).

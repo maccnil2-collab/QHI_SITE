@@ -26,7 +26,7 @@ Updated: 2026-11-01
 - pip check: **PASS**.
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; ten migrations applied, head is `0010_shared_rate_limit_buckets`, schema check clean.
 - `alembic check`: **PASS**, no model/schema differences.
-- PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM and admin access).
+- PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM/admin access, and shared rate-limit checks across independent instances and concurrent requests).
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
 - Root-level pytest invocation: **PASS** from repository root.
 - Frontend npm installation: **BLOCKED** by `EACCES` reaching `registry.npmjs.org`.
