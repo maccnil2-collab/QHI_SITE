@@ -11,9 +11,11 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 class Settings:
     database_url: str | None
     cors_origins: list[str]
+    admin_api_key: str | None
 
 
 settings = Settings(
     database_url=os.getenv("DATABASE_URL"),
     cors_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if origin.strip()],
+    admin_api_key=os.getenv("ADMIN_API_KEY"),
 )

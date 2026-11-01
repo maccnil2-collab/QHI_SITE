@@ -18,12 +18,14 @@ Date: 2026-11-01. Project: `C:\Users\Asus Notebook\QHI-AUTO`.
 | Playwright | Not found in venv/project |
 | VS Code / Figma / Windows build / RAM / free disk | Not checked in this project audit |
 
+A private admin panel and guarded catalog/tariff API are implemented as source, but the browser build is not verified.
+
 Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 installer already exists in `downloads/`; it was not rerun. No new programs were installed. Existing `test.txt` remains untouched and untracked. Secrets were not stored.
 
 ## Checks performed
 - Python, Node.js, npm, Git versions and venv package inventory succeeded.
 - PostgreSQL service is Running and accepts TCP connections. `psql -w` without a password was rejected; no password was attempted.
-- Six API/pricing tests passed; compileall passed; Alembic offline SQL generation/history passed.
+- Nine API/pricing/admin-guard/CORS tests passed; compileall passed; Alembic offline SQL generation/history passed.
 - Uvicorn smoke test returned HTTP 200 from `/api/v1/health`.
 - Translation dictionaries decoded as UTF-8 and contain 53 matching keys per locale.
 - npm registry lookup failed with EACCES. Next.js build, DB migration against the running server, and Playwright tests were not run.

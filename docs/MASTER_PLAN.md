@@ -10,7 +10,8 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Localized responsive catalog source (ru/tg/en); build awaits npm registry access.
 - [ ] Install frontend dependencies from a lockfile, build, and typecheck.
 - [ ] Apply migrations and run integration tests with private application DB credentials.
-- [ ] Admin catalog/tariff management with role-based access and audit trail.
+- [x] Initial API-key-protected admin catalog/tariff management and audit trail.
+- [ ] Replace bootstrap admin key with user/role based access and build the web admin panel.
 - [ ] Customer identity, profiles, favorites, and persisted comparisons.
 - [ ] Orders, logistics events, documents, notifications.
 - [ ] CRM leads, customer interactions, manager assignments, analytics.

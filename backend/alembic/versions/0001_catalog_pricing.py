@@ -67,6 +67,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
     op.create_index("ix_pricing_tariffs_active", "pricing_tariffs", ["active"])
+    op.create_index("uq_pricing_tariffs_one_active", "pricing_tariffs", ["active"], unique=True, postgresql_where=sa.text("active IS TRUE"))
 
 
 def downgrade() -> None:

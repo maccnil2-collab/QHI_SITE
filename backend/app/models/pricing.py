@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, Numeric, String, func
+from sqlalchemy import Boolean, Date, DateTime, Index, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -23,3 +23,6 @@ class PricingTariff(Base):
     source_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+# Database-enforced single active tariff, including concurrent admin requests.
+Index("uq_pricing_tariffs_one_active", PricingTariff.active, unique=True, postgresql_where=PricingTariff.active.is_(True))
