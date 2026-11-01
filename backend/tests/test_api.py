@@ -186,3 +186,22 @@ def test_admin_car_output_contains_translations_for_edit_form():
     assert result.id == 12
     assert result.images == ["https://example.test/car.jpg"]
     assert {item.locale for item in result.translations} == {"ru", "tg", "en"}
+
+
+def test_admin_car_write_requires_unique_ru_tg_en_translations():
+    import pytest
+    from pydantic import ValidationError
+    from app.schemas.admin import CarWrite
+
+    payload = {
+        "slug": "sample-ev", "brand": "Sample", "model": "EV", "year": 2026,
+        "price_cny": "10000", "translations": [
+            {"locale": "ru", "title": "RU"},
+            {"locale": "tg", "title": "TG"},
+            {"locale": "en", "title": "EN"},
+        ],
+    }
+    assert len(CarWrite.model_validate(payload).translations) == 3
+    payload["translations"] = [payload["translations"][0], payload["translations"][0], payload["translations"][2]]
+    with pytest.raises(ValidationError, match="Exactly one translation"):
+        CarWrite.model_validate(payload)

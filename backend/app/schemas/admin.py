@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 from app.schemas.car import CarOut
 
@@ -34,7 +34,14 @@ class CarWrite(BaseModel):
     availability: Availability = "on_request"
     published: bool = False
     image_urls: list[HttpUrl] = Field(default_factory=list, max_length=20)
-    translations: list[TranslationInput] = Field(default_factory=list, max_length=3)
+    translations: list[TranslationInput] = Field(min_length=3, max_length=3)
+
+    @model_validator(mode="after")
+    def require_all_locales(self):
+        locales = {item.locale for item in self.translations}
+        if locales != {"ru", "tg", "en"}:
+            raise ValueError("Exactly one translation for each locale (ru, tg, en) is required")
+        return self
 
 
 class AdminCarOut(CarOut):
