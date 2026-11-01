@@ -31,6 +31,8 @@ Updated: 2026-11-01
 - Live API against PostgreSQL, migration application, PostgreSQL integration tests, and migration rollback/restore behavior.
 - Docker image builds, Compose health checks, TLS proxy behavior, and production deployment.
 
+The detailed current network/PostgreSQL diagnosis and journey matrix are in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md).
+
 ## Release blockers
 
 - Restore permitted npm registry access and commit a reviewed frontend lockfile after checking the dependency graph.
