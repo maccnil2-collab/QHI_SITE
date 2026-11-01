@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest code checkpoint: `14f71a2` (`Test customer denial on staff workflows`)
+- Latest code checkpoint: `92f9ea4` (`Pin frontend package manager toolchain`)
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented
@@ -27,6 +27,7 @@ Updated: 2026-11-01
 - Isolated TypeScript semantic check for RU/TG/EN message dictionaries: **PASS**. Full-app semantic checking through the bundled compiler remains blocked by absent React/Next/Node/Playwright declarations; after fixes, the remaining diagnostics were dependency/type-resolution errors.
 - pip check: **PASS**.
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; ten migrations applied, head is `0010_shared_rate_limit_buckets`, schema check clean.
+- Fresh UTF-8 test database `qhi_auto_migration_fresh_test`: **PASS**; all ten migrations applied from an empty schema, `alembic check` clean, PostgreSQL workflow **1 passed**.
 - Populated PostgreSQL backup/restore: **PASS** into `qhi_auto_restore_utf8_test`; all 18 table row counts and deterministic content hashes match, including Tajik text. An initial restore into a Windows-default `WIN1251` target failed on UTF-8; the partial test target and artifacts were retained.
 - `alembic check`: **PASS**, no model/schema differences.
 - Alembic now reads ignored `backend/.env` for local commands; `alembic current` and `alembic check` both pass without exporting `DATABASE_URL` manually.

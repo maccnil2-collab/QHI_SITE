@@ -1,7 +1,7 @@
 # Frontend and database readiness check
 
 Date: 2026-11-01  
-Current code checkpoint: `14f71a2` (`Test customer denial on staff workflows`)
+Current code checkpoint: `92f9ea4` (`Pin frontend package manager toolchain`)
 
 ## npm registry diagnosis
 
@@ -35,6 +35,7 @@ The vehicle detail route was added, and quote submission now uses the session-aw
 - DSN: `postgresql+psycopg://postgres@127.0.0.1:55439/qhi_auto_test`.
 - Ignored local `backend/.env` and `frontend/.env.local` files are configured for this test DB and the local API URL. A new random development `ADMIN_API_KEY` is stored only in ignored `backend/.env`; its value was not printed or committed.
 - All ten migrations applied to this fresh test database. `alembic current` reports `0010_shared_rate_limit_buckets`; `alembic check` reports no model/schema differences.
+- Repeated from a newly created UTF-8 database `qhi_auto_migration_fresh_test`: all ten migrations ran from an empty schema through `0010_shared_rate_limit_buckets`; `alembic check` found no drift, and the PostgreSQL API workflow passed against this fresh database (**1 passed**).
 - The opt-in PostgreSQL API workflow test passed and covers registration, login/session restore, CSRF, customer-to-staff access denial, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, admin edit/publication round trips, admin catalog authorization, and shared/concurrent PostgreSQL rate limits.
 - The same workflow also passed against the populated UTF-8 restore clone (`qhi_auto_restore_utf8_test`), including Tajik localized catalog data. It added only uniquely marked test fixtures to the clone; the source database was not modified by this run.
 - The isolated database now contains generated integration fixtures and workflow records. They were left intact. No production DB was contacted.
