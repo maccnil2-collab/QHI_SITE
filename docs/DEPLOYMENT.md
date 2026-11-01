@@ -1,49 +1,62 @@
-# Deployment starter
+# QHI AUTO deployment
 
-`compose.yaml` is a single-host deployment starter for review and controlled staging. It runs PostgreSQL, FastAPI, and the standalone Next.js server. PostgreSQL is reachable only on the private Compose network and does not claim the host's port 5432. API and web ports bind to loopback; place a maintained TLS reverse proxy in front before external access. This configuration is not a production launch approval.
+## Application shape
 
-## Prerequisites and secrets
+QHI AUTO is a three-part application: a Next.js server, a FastAPI service, and PostgreSQL. The frontend calls the API directly from the browser and customer authentication uses secure, HTTP-only cookies plus CSRF protection. Do not deploy the backend as a static Netlify site or expose PostgreSQL to the public internet.
 
-- Docker Engine with the Compose plugin and outbound access to official Python, Node, and PostgreSQL images and the npm registry.
-- The API image uses Python 3.11 and installs only `requirements-prod.txt`; pytest stays in the development requirements. The web image uses [Node 24 LTS](https://nodejs.org/en/about/previous-releases), which is also compatible with the installed Next.js 15 line.
-- Before a real release, replace mutable major/minor image tags with reviewed immutable digests and define a scheduled patch process.
-- A committed frontend `package-lock.json`. The repository currently has none; `npm ci` in the image intentionally fails until one is generated and reviewed.
-- A private root `.env` copied from `.env.compose.example`. Generate unique random values for `POSTGRES_PASSWORD` and `ADMIN_API_KEY` in a password manager or approved secret manager. Use URL-safe characters for the database password because it is embedded in `DATABASE_URL`. Do not commit `.env` or paste secret values into logs or support messages.
-- Set `NEXT_PUBLIC_API_URL` to the public API base URL including `/api/v1`, and set `CORS_ORIGINS` to the exact public website origin. These values are embedded in the frontend at build time.
-- Keep the site and API on the same site (such as `www.example.tld` and `api.example.tld`) or proxy `/api` through the site origin. Browser sessions use `SameSite=Lax` cookies and cannot authenticate across unrelated sites.
-- Set `FORWARDED_ALLOW_IPS` to the exact network address(es) of trusted reverse proxies that connect to the API. Keep the default loopback-only trust when no proxy forwarding is configured; never trust arbitrary clients.
+Two hosting shapes fit the current code:
 
-## First deployment
+- **Single VPS:** use the root `compose.yaml` for PostgreSQL, API, and web, then put a maintained HTTPS reverse proxy in front. The Compose file binds application ports to loopback and keeps PostgreSQL on the private Compose network.
+- **Managed hosting:** use a platform that supports separate Docker web services and managed PostgreSQL (for example, Render). Deploy the API as a web service, the Next.js standalone image as a web service, and PostgreSQL as a private managed database. Render documents Docker web services, private service networking, managed PostgreSQL, and public HTTPS service URLs in its [web service](https://render.com/docs/web-services), [Docker](https://render.com/docs/docker), and [PostgreSQL](https://render.com/docs/postgresql) documentation.
 
-1. Review the compose file, image tags, firewall, TLS proxy, and secret values for the target host. Keep PostgreSQL off public interfaces.
-2. Start the database and wait until it reports healthy:
+The current workspace does not contain a production deployment configuration for a particular provider. Choose the account, region, service plans, and backup policy before provisioning resources; managed production services can incur recurring charges.
+
+## Required production settings
+
+- `APP_ENV=production` on the API. This hides Swagger, ReDoc, and OpenAPI.
+- `DATABASE_URL` must point to a newly provisioned production database, use the `postgresql+psycopg://` SQLAlchemy driver, and remain private. Do not reuse the local test database.
+- `CORS_ORIGINS` must contain only the exact public website origin(s), including the scheme and excluding path suffixes.
+- `ADMIN_API_KEY` must be independently generated and stored in the hosting provider's secret manager. Never commit it or pass it as a Docker build argument.
+- `FORWARDED_ALLOW_IPS` must list only the actual trusted reverse proxy addresses. Do not use `*`; confirm the host's proxy address model before enabling forwarded client IPs.
+- `NEXT_PUBLIC_API_URL` is embedded in the frontend at build time and must point to the public API origin followed by `/api/v1`.
+- Keep the site and API on the same site (for example `www.example.com` and `api.example.com`) so browser cookie and CSRF protections work as intended.
+- Leave `DOCUMENT_STORAGE_PATH` unset until durable private storage, backups, and file scanning are configured. Upload endpoints stay disabled in that state.
+
+## VPS deployment with Compose
+
+1. Provision a supported Linux host with Docker Engine and the Compose plugin. Configure a domain and firewall; allow public access only through the HTTPS reverse proxy.
+2. Create a private root `.env` from `.env.compose.example`. Generate the database password and admin key in a password manager, set the exact website CORS origin, and set `NEXT_PUBLIC_API_URL` to the public API URL ending in `/api/v1`.
+3. Configure `FORWARDED_ALLOW_IPS` for the proxy's exact address on the private network. Keep PostgreSQL unexposed.
+4. Start PostgreSQL and verify the service is healthy:
 
    ```sh
    docker compose up -d db
    docker compose ps
    ```
 
-3. Apply migrations as a separate, reviewable release action:
+5. Back up the new database, then apply migrations as a separate release action:
 
    ```sh
    docker compose run --build --rm api alembic upgrade head
    ```
 
-4. Build and start the API and web services:
+6. Build and start the API and web services:
 
    ```sh
    docker compose up --build -d api web
    docker compose ps
    ```
 
-5. Verify `/api/v1/health`, `/api/v1/ready`, and the website through the TLS proxy. Production mode disables FastAPI Swagger, ReDoc, and OpenAPI routes. Confirm proxy headers are accepted only from the configured trusted proxy addresses.
-6. Establish encrypted, off-host database and private document backups; perform restore drills before customer data is accepted. Define retention, malware scanning, monitoring, alerting, incident response, and patch ownership.
+7. Verify `/api/v1/health`, `/api/v1/ready`, the catalog, authentication, quote flow, and lead form through HTTPS. Confirm `/docs`, `/redoc`, and `/openapi.json` return 404. Test from mobile networks before accepting customer data.
+8. Establish encrypted off-host database and private document backups, restore drills, monitoring, patch ownership, and incident procedures.
 
-The compose configuration uses named volumes for PostgreSQL and uploaded order documents. Docker named volumes alone are not a backup strategy. Migration rollback is not automatic: take and verify a database backup before schema changes, and follow a tested forward-repair procedure.
+The web and API containers bind to `127.0.0.1` on the host. Configure the TLS proxy to route to those local ports. Never publish database port 5432.
 
-## Current release blockers
+## Deployment readiness observed in the development workspace
 
-- The frontend lockfile and all Next.js build/browser verification are still missing because npm registry access has failed in this environment.
-- Docker is not installed on the development machine, so image builds and Compose health checks have not been executed here.
-- All ten migrations and core API journeys have passed on a dedicated loopback PostgreSQL test database. No production database was accessed; production credentials, staging, and deployment behavior remain unverified.
-- Browser cookie session restoration and CSRF protection are implemented in source but still need a successful frontend build and browser verification. PostgreSQL-backed shared rate limits are implemented; retention/observability, email verification/recovery, durable scanned document storage, operational backups, and production monitoring remain release requirements.
+- Frontend package lockfile, TypeScript check, ESLint, production build, and desktop/mobile Chromium browser checks are available and pass for the current frontend source.
+- Backend unit and security suite: 53 passed. The PostgreSQL end-to-end test is opt-in and was skipped because `QHI_TEST_DATABASE_URL` was not set.
+- A local API launched in production mode returned 200 from `/api/v1/health`, 401 from the unauthenticated customer endpoint, and 404 from `/docs`; security headers were present. `/api/v1/ready` and the read-only catalog query timed out because the isolated local `*_test` PostgreSQL service was not reachable. No production database was accessed.
+- Docker, a provider CLI, and a Git remote are not configured in the workspace. No cloud account, production database, domain, or deployment credentials are available here. As a result, container publishing and public HTTPS verification have not been performed.
+
+Do not treat a successful frontend build or the API health endpoint as a completed production deployment. A release is ready only after the production database is reachable and migrated, `/api/v1/ready` succeeds, the provider deployment is live, and the browser journeys above pass against that deployment.
