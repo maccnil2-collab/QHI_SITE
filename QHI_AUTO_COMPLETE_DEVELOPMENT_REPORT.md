@@ -29,7 +29,7 @@ This pass added a base for categorized vehicle specifications, public/staff supp
 ## Payments, support, currency, admin
 
 - **Payments:** disabled, no money movement. The code is only an adapter boundary and schema groundwork. Required company, bank, provider, signature/replay checks, reconciliation, and legal tasks are documented in [docs/PAYMENTS_PRELAUNCH.md](docs/PAYMENTS_PRELAUNCH.md).
-- **Support:** ticket creation and staff status updates are implemented at the API/UI layer. Persistent production behavior requires applying migration 0011. SMTP/provider configuration is absent; mail is not sent.
+- **Support:** ticket creation and staff status updates are implemented at the API/UI layer. Status events are stored, but their timeline is not yet rendered and customers do not yet have a personal ticket-history endpoint. Persistent behavior requires applying migration 0011. SMTP/provider configuration is absent; mail is not sent.
 - **Currency:** vehicle display and quote calculator still use CNY/TJS tariff inputs. USD/EUR/TJS selection, live or dated demo FX rates, and rate-source timestamps have not been implemented. No rate has been invented.
 - **Administration:** existing catalog/tariff, customer, and CRM/order workspaces remain. Extended vehicle editing and support ticket management were added. Dedicated categories management, image upload, payment history/refunds, FX/site settings, and audit UI for new support actions remain incomplete. Role-protected staff APIs were used for support; the `/admin/support` page itself relies on the staff authorization enforced by the backend.
 
