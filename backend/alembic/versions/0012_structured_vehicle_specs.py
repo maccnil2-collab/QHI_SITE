@@ -1,14 +1,14 @@
 """Add structured specifications and verifiable price/source fields.
 
 Revision ID: 0012_structured_vehicle_specs
-Revises: 0011_demo_inventory_support_payments
+Revises: 0011_demo_inventory_support
 """
 from alembic import op
 import sqlalchemy as sa
 
 
 revision = "0012_structured_vehicle_specs"
-down_revision = "0011_demo_inventory_support_payments"
+down_revision = "0011_demo_inventory_support"
 branch_labels = None
 depends_on = None
 

@@ -1,12 +1,12 @@
 """Add inventory metadata, support tickets, and provider-neutral payment attempts.
 
-Revision ID: 0011_demo_inventory_support_payments
+Revision ID: 0011_demo_inventory_support
 Revises: 0010_shared_rate_limit_buckets
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0011_demo_inventory_support_payments"
+revision = "0011_demo_inventory_support"
 down_revision = "0010_shared_rate_limit_buckets"
 branch_labels = None
 depends_on = None
