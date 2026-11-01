@@ -40,4 +40,4 @@ Branch and base checkpoint: `main`, `666ff552d5bd6fb0545ceaf3fcd33ef06e4f9169` (
 7. The bootstrap admin API key remains a transitional management path; production key rotation and operational controls remain outstanding.
 8. User-owned inventory, images, exchange rates, and legal tariff values are intentionally not invented.
 
-No implementation changes were made as part of the intake audit; this file records the source and checks examined above.
+After the intake audit, added a root `pytest.ini` so the suite can be collected from the repository root without manually changing Python paths. Re-running pytest from the root after this change produced **50 passed** (same deprecation warning).

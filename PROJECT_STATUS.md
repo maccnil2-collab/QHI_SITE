@@ -22,6 +22,7 @@ Updated: 2026-11-01
 - Python compileall: **PASS**.
 - pip check: **PASS**.
 - Alembic offline PostgreSQL SQL generation through head: **PASS** with an offline-only URL.
+- Root-level pytest invocation: **PASS** after adding `pytest.ini` (`50 passed`).
 - Frontend npm installation: **BLOCKED** by `EACCES` reaching `registry.npmjs.org`.
 
 ## Not verified
