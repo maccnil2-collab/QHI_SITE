@@ -16,6 +16,7 @@ Updated: 2026-11-01
 - Localized vehicle detail page/API added; catalog links to detail pages. Quote calculation now uses the session-aware CSRF client so signed-in estimates are associated with the customer's history.
 - Catalog empty-state copy now reports no matching vehicles instead of claiming the collection is not open yet; the contact shortcut has a localized accessible name.
 - ESLint flat config and Playwright desktop/mobile Chromium tests configured for locale/detail, registration/session restore, quote/order, CRM, and admin flows. The estimate test checks persistence without depending on a tariff label; missing DB fixtures fail clearly instead of silently skipping.
+- Frontend manifest declares npm `11.20.0` and Node `>=20.9.0`; dependencies are still unlocked and have not been installed in the Codex execution environment.
 - Ten Alembic revisions, ending at `0010_shared_rate_limit_buckets`.
 - Compose deployment starter with PostgreSQL, API, and frontend services.
 
