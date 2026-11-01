@@ -4,13 +4,13 @@ Updated: 2026-11-02
 
 ## Current verified status (2026-11-02)
 
-- Latest source checkpoint: `2892217` (`Isolate Playwright build output from local frontend`). It follows `5e88ff9` (restrict demo import to `qhi_auto_demo`) and `20f7f0d` (100 localized DEMO vehicles).
+- Latest committed source checkpoint: `9e1783c` (`Cover QHI Care ticket and staff resolution flow`), followed in this work by a pending quote hydration-race fix. It includes `2892217` (isolated Playwright build output), `5e88ff9` (restrict demo import to `qhi_auto_demo`), and `20f7f0d` (100 localized DEMO vehicles).
 - Local servers are running: API `http://127.0.0.1:8001/api/v1`, frontend `http://localhost:3000/ru`. `/ready` and the site both return HTTP 200.
 - The isolated UTF-8 database `qhi_auto_demo` contains exactly 100 published cars with `is_demo=true`, 300 image metadata rows, and an explicitly illustrative DEMO tariff. It has no customer accounts. The separate `qhi_auto_app_test` database contains workflow/E2E test fixtures and test-generated records; backups were made to the local temp directory before those workflows. Do not copy test rows into the demo database.
 - Catalog API verification returned all 100 cards in RU/TG/EN; brand search, category filtering, USD/TJS values, and three-image gallery metadata per car passed. Browser verification rendered 100 cards, opened a detail page with three gallery entries, and found no mobile horizontal overflow.
 - Backend suite: 58 passed, 1 skipped. PostgreSQL workflow test: 1 passed. Frontend typecheck, ESLint, and optimized production build passed.
-- Playwright desktop/mobile: locale/detail navigation, CRM/admin connection, and QHI CARE ticket intake plus manager resolution passed. The customer registration → quote → order E2E still fails before the quote result appears; the quote POST was absent from the captured network trace. An anonymous DEMO quote succeeds in the local browser. Root cause remains under investigation.
-- External Unsplash URLs are blocked by this browser sandbox (`ERR_NETWORK_ACCESS_DENIED`); URL/license metadata is present, but successful photo rendering was not verified here. No public deployment or real payment occurred.
+- Playwright desktop/mobile: all 8 scenarios passed, covering locale/detail navigation, registration/session restore, quote/order, CRM/admin, and QHI CARE ticket intake plus staff resolution. A hydration-readiness guard and explicit page readiness waits fixed a race that previously dropped the quote input before submission.
+- External Unsplash URLs are blocked by this browser sandbox (`ERR_NETWORK_ACCESS_DENIED`); URL/license metadata is present, but successful photo pixel rendering remains unverified here. No public deployment or real payment occurred.
 - Payments are disabled; email/SMS delivery and password recovery are not configured. The current site is a local DEMO environment, not a production-ready customer service.
 
 The earlier takeover snapshot below is historical and is superseded by this section.

@@ -47,10 +47,13 @@ test("customer registers, restores their session, saves a quote and creates an o
   await page.goto("/en");
   await page.getByLabel("Make, model or trim").fill("Integration");
   await page.getByRole("link", { name: car.localized_title ?? "Integration EV" }).first().click();
+  await expect(page.locator(".vehicle-summary h1")).toHaveText(car.localized_title ?? "Integration EV");
   const priceInput = page.getByLabel("Vehicle price in China, CNY");
+  const calculateButton = page.getByRole("button", { name: "Calculate estimate" });
+  await expect(calculateButton).toBeEnabled();
   await priceInput.fill("10000");
   await expect(priceInput).toHaveValue("10000");
-  await page.getByRole("button", { name: "Calculate estimate" }).click();
+  await calculateButton.click();
   await expect(page.locator(".quote-total")).toBeVisible();
 
   await page.goto("/en/account");
