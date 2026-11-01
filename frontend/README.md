@@ -27,6 +27,8 @@ npm run test:e2e
 
 The suite covers locale/detail navigation, customer registration and session restoration, quote history, order creation, CRM status management, and admin catalog access on desktop and mobile Chromium. Dependencies and browser binaries must first be installed. These browser tests have not yet run in this environment.
 
+After `npm ci`, install the Chromium browser required by the configured projects with `npx playwright install chromium`.
+
 Set `NEXT_PUBLIC_API_URL` to the API base URL (default `http://localhost:8000/api/v1`). For local development, start the backend with a disposable test `DATABASE_URL`; never point the E2E setup at production.
 
 The current workspace has ignored local env files pointing to the isolated `qhi_auto_test` database and API on loopback. Start the API from `backend/` with `..\.venv\Scripts\python.exe -m uvicorn app.main:app --reload`; the backend currently runs at `http://127.0.0.1:8000`.
