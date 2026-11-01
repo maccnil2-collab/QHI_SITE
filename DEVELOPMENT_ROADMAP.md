@@ -2,7 +2,7 @@
 
 Priorities are ordered by dependency and risk. Do not publish legal, tariff, inventory, or delivery claims without owner-provided values.
 
-## Progress at checkpoint `42769e8`
+## Progress at checkpoint `1c3eab3`
 
 - Completed: isolated PostgreSQL test cluster; all ten migrations applied; schema/model comparison clean; PostgreSQL API workflow test passes, including concurrent shared rate-limit requests.
 - Completed: localized vehicle detail route, catalog navigation, and authenticated quote persistence; ESLint and desktop/mobile Playwright source configuration added.
