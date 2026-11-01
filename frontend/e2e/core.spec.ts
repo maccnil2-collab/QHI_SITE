@@ -9,7 +9,7 @@ async function integrationVehicle(request: APIRequestContext) {
   expect(response.ok(), await response.text()).toBeTruthy();
   const cars = await response.json() as { id: number; slug: string; localized_title: string | null; brand: string }[];
   const car = cars.find((item) => item.brand === "Integration");
-  test.skip(!car, "Run backend/tests/test_postgres_workflows.py first to seed a published test vehicle and active tariff.");
+  expect(car, "Run backend/tests/test_postgres_workflows.py first to seed a published test vehicle and active tariff.").toBeTruthy();
   return car!;
 }
 
@@ -52,7 +52,8 @@ test("customer registers, restores their session, saves a quote and creates an o
   await expect(page.getByText("Estimated total in Dushanbe")).toBeVisible();
 
   await page.goto("/en/account");
-  await expect(page.getByText(/Integration test/)).toBeVisible();
+  const savedEstimates = page.locator(".account-block").filter({ has: page.getByRole("heading", { name: "Cost estimates" }) });
+  await expect(savedEstimates.locator(".account-record")).toHaveCount(1);
   await page.getByLabel("Vehicle ID").fill(String(car.id));
   await page.getByLabel("Message").fill("Playwright order request");
   await page.getByRole("button", { name: "Submit request" }).click();
