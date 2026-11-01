@@ -49,7 +49,7 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 - Alembic generated offline PostgreSQL SQL through migration head `0009_crm_analytics_indexes`.
 - OpenAPI exposes 40 paths, including date-bounded CRM analytics, database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, and admin routes.
 - API responses include baseline anti-sniffing, clickjacking, referrer, and permissions-policy headers; readiness returns a generic 503 without leaking database errors.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 85-key schemas; both execute under Node's TypeScript stripping mode. All 18 TypeScript/TSX files pass compiler syntax parsing using VS Code's bundled TypeScript, including the localized admin dictionary. Admin catalog, tariff, and customer/staff role screens provide ru/tg/en labels.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 85-key schemas; both execute under Node's TypeScript stripping mode. All 18 TypeScript/TSX files pass compiler syntax parsing using VS Code's bundled TypeScript, including the localized admin dictionary. Admin catalog, tariff, and customer/staff role screens provide ru/tg/en labels; their 73 translation keys match across all locales and are non-empty.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues
