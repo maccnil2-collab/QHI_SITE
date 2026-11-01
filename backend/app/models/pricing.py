@@ -1,4 +1,4 @@
-﻿from datetime import date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Boolean, Date, DateTime, Numeric, String, func
@@ -16,6 +16,7 @@ class PricingTariff(Base):
     cny_to_tjs: Mapped[Decimal | None] = mapped_column(Numeric(12, 6), nullable=True)
     shipping_tjs: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     customs_rate: Mapped[Decimal | None] = mapped_column(Numeric(8, 6), nullable=True)
+    customs_basis: Mapped[str | None] = mapped_column(String(32), nullable=True)
     additional_tjs: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     paperwork_tjs: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     effective_on: Mapped[date]

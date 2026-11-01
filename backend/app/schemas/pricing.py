@@ -1,4 +1,4 @@
-﻿from datetime import date
+from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
@@ -13,6 +13,7 @@ class QuoteOut(BaseModel):
     car_tjs: Decimal
     shipping_tjs: Decimal
     customs_tjs: Decimal
+    customs_basis: str
     additional_tjs: Decimal
     paperwork_tjs: Decimal
     total_tjs: Decimal

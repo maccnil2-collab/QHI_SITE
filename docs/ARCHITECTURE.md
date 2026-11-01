@@ -1,4 +1,4 @@
-﻿# Архитектура QHI AUTO
+# Архитектура QHI AUTO
 
 ## Сервисы
 - `frontend/`: Next.js App Router, React, TypeScript, Tailwind CSS; маршруты локализованы `/ru`, `/tg`, `/en`.

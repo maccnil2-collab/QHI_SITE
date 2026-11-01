@@ -1,4 +1,4 @@
-﻿from datetime import date
+from datetime import date
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -58,6 +58,7 @@ def quote(request: QuoteRequest, db: Session = Depends(get_db)) -> QuoteOut:
         cny_to_tjs=tariff.cny_to_tjs,
         shipping_tjs=tariff.shipping_tjs,
         customs_rate=tariff.customs_rate,
+        customs_basis=tariff.customs_basis,
         additional_tjs=tariff.additional_tjs,
         paperwork_tjs=tariff.paperwork_tjs,
     )

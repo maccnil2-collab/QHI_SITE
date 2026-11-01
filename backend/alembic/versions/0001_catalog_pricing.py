@@ -58,6 +58,7 @@ def upgrade() -> None:
         sa.Column("cny_to_tjs", sa.Numeric(12, 6)),
         sa.Column("shipping_tjs", sa.Numeric(14, 2)),
         sa.Column("customs_rate", sa.Numeric(8, 6)),
+        sa.Column("customs_basis", sa.String(32)),
         sa.Column("additional_tjs", sa.Numeric(14, 2)),
         sa.Column("paperwork_tjs", sa.Numeric(14, 2)),
         sa.Column("effective_on", sa.Date(), nullable=False),
