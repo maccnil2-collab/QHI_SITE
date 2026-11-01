@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest committed code checkpoint: `38cbe16` (`Record current npm sandbox behavior`); frontend readiness changes are currently uncommitted
+- Latest committed code checkpoint: `73a0c92` (`Fix frontend lint and document readiness results`)
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented

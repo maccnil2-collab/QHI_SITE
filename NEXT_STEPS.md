@@ -11,5 +11,5 @@
 
 1. Diagnose the quote form field reset in the customer E2E flow and pass the complete desktop/mobile suite on the isolated `qhi_auto_test` database.
 2. Restore npm advisory endpoint access. Analyze and fix PostCSS and minimatch versions without force upgrades, then verify with `npm audit` and a clean `npm ci`.
-3. Commit the verified lockfile, source changes, and readiness documentation in focused commits. Leave root `test.txt` untracked.
+3. Keep the focused frontend commits `db3484e` and `73a0c92`; root `test.txt` remains untracked.
 4. Continue production readiness work: document recovery, monitoring, key rotation, HTTPS proxy, and staging checks.
