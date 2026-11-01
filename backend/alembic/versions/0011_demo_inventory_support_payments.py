@@ -16,7 +16,9 @@ def upgrade() -> None:
     for name, typ in (("category", sa.String(40)), ("engine_type", sa.String(40)), ("engine_cc", sa.Integer()), ("transmission", sa.String(40)), ("mileage_km", sa.Integer()), ("exterior_color", sa.String(80)), ("equipment", sa.Text()), ("specifications", sa.Text())):
         op.add_column("cars", sa.Column(name, typ, nullable=True))
     op.add_column("cars", sa.Column("fuel_consumption_l_100km", sa.Numeric(5, 2), nullable=True))
-    op.add_column("cars", sa.Column("is_demo", sa.Boolean(), nullable=False, server_default=sa.false()))
+    op.add_column("cars", sa.Column("is_demo", sa.Boolean(), nullable=True))
+    op.execute("UPDATE cars SET is_demo = false WHERE is_demo IS NULL")
+    op.alter_column("cars", "is_demo", existing_type=sa.Boolean(), nullable=False)
     op.create_index("ix_cars_category", "cars", ["category"])
     op.create_index("ix_cars_is_demo", "cars", ["is_demo"])
     for name, typ in (("attribution", sa.String(500)), ("license_name", sa.String(120)), ("source_url", sa.Text())):
@@ -28,11 +30,10 @@ def upgrade() -> None:
         sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="SET NULL"), nullable=True),
         sa.Column("name", sa.String(160), nullable=False), sa.Column("email", sa.String(254), nullable=False),
         sa.Column("category", sa.String(32), nullable=False), sa.Column("subject", sa.String(180), nullable=False),
-        sa.Column("message", sa.Text(), nullable=False), sa.Column("locale", sa.String(2), nullable=False, server_default="en"),
-        sa.Column("status", sa.String(24), nullable=False, server_default="open"),
+        sa.Column("message", sa.Text(), nullable=False), sa.Column("locale", sa.String(2), nullable=False),
+        sa.Column("status", sa.String(24), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.UniqueConstraint("ticket_number", name="uq_support_tickets_ticket_number"),
     )
     for col in ("ticket_number", "customer_id", "email", "category", "status", "created_at"):
         op.create_index(f"ix_support_tickets_{col}", "support_tickets", [col], unique=(col == "ticket_number"))
@@ -48,14 +49,13 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True), sa.Column("public_id", sa.String(36), nullable=False),
         sa.Column("order_id", sa.Integer(), sa.ForeignKey("vehicle_orders.id", ondelete="RESTRICT"), nullable=False),
         sa.Column("customer_id", sa.Integer(), sa.ForeignKey("customers.id", ondelete="RESTRICT"), nullable=False),
-        sa.Column("provider", sa.String(32), nullable=False, server_default="demo"),
+        sa.Column("provider", sa.String(32), nullable=False),
         sa.Column("provider_reference", sa.String(180)), sa.Column("idempotency_key", sa.String(64), nullable=False),
         sa.Column("amount", sa.Numeric(14, 2), nullable=False), sa.Column("currency", sa.String(3), nullable=False),
-        sa.Column("status", sa.String(32), nullable=False, server_default="not_started"),
+        sa.Column("status", sa.String(32), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.UniqueConstraint("idempotency_key", name="uq_payment_attempt_idempotency"),
-        sa.UniqueConstraint("public_id", name="uq_payment_attempts_public_id"))
+        sa.UniqueConstraint("idempotency_key", name="uq_payment_attempt_idempotency"))
     for col in ("public_id", "order_id", "customer_id", "provider_reference", "status", "created_at"):
         op.create_index(f"ix_payment_attempts_{col}", "payment_attempts", [col], unique=(col == "public_id"))
 
