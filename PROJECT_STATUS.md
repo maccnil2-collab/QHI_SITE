@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest code checkpoint: `a25c10a` (`Harden mobile and estimate browser checks`)
+- Latest code checkpoint: `8fb2649` (`Fix frontend type contracts and admin car state`)
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented
@@ -23,6 +23,7 @@ Updated: 2026-11-01
 - Backend tests: **52 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning).
 - Python compileall: **PASS**.
 - TypeScript/TSX syntax transpilation: **PASS (22 files)** using the VS Code-bundled compiler; this is syntax-only, not a semantic typecheck.
+- Isolated TypeScript semantic check for RU/TG/EN message dictionaries: **PASS**. Full-app semantic checking through the bundled compiler remains blocked by absent React/Next/Node/Playwright declarations; after fixes, the remaining diagnostics were dependency/type-resolution errors.
 - pip check: **PASS**.
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; ten migrations applied, head is `0010_shared_rate_limit_buckets`, schema check clean.
 - `alembic check`: **PASS**, no model/schema differences.
@@ -36,7 +37,7 @@ Updated: 2026-11-01
 
 ## Not verified
 
-- Next.js production build, TypeScript semantic check, frontend lint, and Playwright. Tooling is configured, but attempted commands fail because `tsc`, `next`, `eslint`, and `playwright` are not installed.
+- Next.js production build, full TypeScript semantic check, frontend lint, and Playwright. Tooling is configured, but the dependency-backed commands cannot run because `next`, `eslint`, and `playwright` are not installed.
 - Browser E2E, migration rollback, and backup/restore behavior.
 - Docker image builds, Compose health checks, TLS proxy behavior, and production deployment.
 

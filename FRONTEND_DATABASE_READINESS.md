@@ -1,7 +1,7 @@
 # Frontend and database readiness check
 
 Date: 2026-11-01  
-Current checkpoint: `a25c10a` (`Harden mobile and estimate browser checks`)
+Current checkpoint: `8fb2649` (`Fix frontend type contracts and admin car state`)
 
 ## npm registry diagnosis
 
@@ -17,13 +17,13 @@ Current checkpoint: `a25c10a` (`Harden mobile and estimate browser checks`)
 |---|---|
 | npm install / lockfile | BLOCKED: registry socket `EACCES` |
 | Dependency compatibility resolution | NOT TESTED |
-| TypeScript semantic typecheck | BLOCKED: `tsc` binary not installed |
+| TypeScript semantic typecheck | BLOCKED: frontend dependencies/types are absent. Bundled compiler reports only unresolved dependency/type declarations after fixing project-local diagnostics; isolated locale dictionaries typecheck successfully. |
 | TypeScript/TSX syntax transpile | PASS: 22 files via the TypeScript compiler bundled with VS Code (syntax only) |
 | Next production build | BLOCKED: `next` binary not installed |
 | ESLint | Configured; BLOCKED: `eslint` binary not installed |
 | Playwright E2E | Configured; BLOCKED: `playwright` and browser binaries not installed |
 
-The `typecheck`, `build`, `lint`, `test:e2e`, and `test:e2e:ui` scripts and the ESLint/Playwright configurations are committed. Each command was attempted; they fail because dependencies are missing. Desktop/mobile E2E source covers locale/detail, registration/session restoration, authenticated quote history, order creation, CRM status updates, and admin catalog connection. None of these browser tests has run.
+The `typecheck`, `build`, `lint`, `test:e2e`, and `test:e2e:ui` scripts and the ESLint/Playwright configurations are committed. Dependency-backed commands cannot run because packages are missing. The available TypeScript compiler found and helped fix project-local contract issues, but cannot resolve the absent React, Next, Node, and Playwright declarations. Desktop/mobile E2E source covers locale/detail, registration/session restoration, authenticated quote history, order creation, CRM status updates, and admin catalog connection. None of these browser tests has run.
 
 The vehicle detail route was added, and quote submission now uses the session-aware API client with credentials and CSRF. A live browser build has not yet validated these frontend changes.
 
