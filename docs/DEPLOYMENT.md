@@ -10,6 +10,7 @@
 - A committed frontend `package-lock.json`. The repository currently has none; `npm ci` in the image intentionally fails until one is generated and reviewed.
 - A private root `.env` copied from `.env.compose.example`. Generate unique random values for `POSTGRES_PASSWORD` and `ADMIN_API_KEY` in a password manager or approved secret manager. Use URL-safe characters for the database password because it is embedded in `DATABASE_URL`. Do not commit `.env` or paste secret values into logs or support messages.
 - Set `NEXT_PUBLIC_API_URL` to the public API base URL including `/api/v1`, and set `CORS_ORIGINS` to the exact public website origin. These values are embedded in the frontend at build time.
+- Keep the site and API on the same site (such as `www.example.tld` and `api.example.tld`) or proxy `/api` through the site origin. Browser sessions use `SameSite=Lax` cookies and cannot authenticate across unrelated sites.
 - Set `FORWARDED_ALLOW_IPS` to the exact network address(es) of trusted reverse proxies that connect to the API. Keep the default loopback-only trust when no proxy forwarding is configured; never trust arbitrary clients.
 
 ## First deployment
@@ -45,4 +46,4 @@ The compose configuration uses named volumes for PostgreSQL and uploaded order d
 - The frontend lockfile and all Next.js build/browser verification are still missing because npm registry access has failed in this environment.
 - Docker is not installed on the development machine, so image builds and Compose health checks have not been executed here.
 - No private database credentials are configured, so migrations have only been validated as offline SQL and not applied to PostgreSQL.
-- Email verification/recovery, production cookie-based session restoration, durable scanned document storage, distributed rate limiting, operational backups, and production monitoring still need implementation and verification.
+- Browser cookie session restoration and CSRF protection are implemented in source but still need full frontend build and browser verification. Email verification/recovery, durable scanned document storage, distributed rate limiting, operational backups, and production monitoring remain release requirements.

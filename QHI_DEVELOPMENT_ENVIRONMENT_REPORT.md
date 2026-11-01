@@ -45,7 +45,7 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 47 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 50 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
 - Alembic generated offline PostgreSQL SQL through migration head `0009_crm_analytics_indexes`.
 - OpenAPI exposes 40 paths, including date-bounded CRM analytics, database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, and admin routes.
@@ -67,4 +67,4 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 1. Restore approved npm registry access, install from a lockfile, then run Next build and typecheck before browser tests.
 2. Configure `DATABASE_URL` privately, apply migrations through `0009_crm_analytics_indexes`, and run PostgreSQL integration tests; keep credentials out of command output and repository files.
 3. Add Playwright to the locked frontend toolchain and exercise registration, order lifecycle, staff access, CRM, and mobile layouts.
-4. Complete email verification/recovery, secure browser session restoration, production object storage and malware scanning, distributed rate limiting, TLS proxy setup, backup/restore drills, and monitoring before a public launch.
+4. Complete email verification/recovery, production object storage and malware scanning, distributed rate limiting, TLS proxy setup, backup/restore drills, and monitoring before a public launch.

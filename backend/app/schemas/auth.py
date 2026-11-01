@@ -68,9 +68,8 @@ class CustomerOut(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
     expires_at: datetime
+    csrf_token: str
     customer: CustomerOut
 
 

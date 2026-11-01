@@ -17,6 +17,18 @@ def test_production_app_hides_api_schema_and_interactive_docs():
         assert response.headers["X-Content-Type-Options"] == "nosniff"
 
 
+def test_browser_csrf_header_is_allowed_and_token_header_is_exposed():
+    origin = "http://localhost:3000"
+    preflight = client.options(
+        "/api/v1/auth/me",
+        headers={"Origin": origin, "Access-Control-Request-Method": "PATCH", "Access-Control-Request-Headers": "content-type,x-csrf-token"},
+    )
+    assert preflight.status_code == 200
+    assert "x-csrf-token" in preflight.headers["access-control-allow-headers"].lower()
+    response = client.get("/api/v1/health", headers={"Origin": origin})
+    assert response.headers["access-control-expose-headers"] == "X-CSRF-Token"
+
+
 def test_health_is_available_without_database_credentials():
     response = client.get("/api/v1/health")
     assert response.status_code == 200

@@ -14,6 +14,7 @@ Catalog (makes, models, trims, specifications, images, availability); Pricing (v
 - Customs rates, customs calculation basis, and other legal/commercial tariffs have no defaults and carry an effective date. Incomplete tariffs prevent quoting.
 - Each issued quote is persisted with its input, tariff version, full cost-component snapshots, and timestamp, so later tariff edits do not rewrite prior calculations. Customs rates are stored as fractions (0.15 means 15%). Incomplete tariffs may be saved as drafts but cannot be activated.
 - PostgreSQL is required in production. SQLite is allowed only for isolated unit tests when a driver is available.
+- Browser identity uses an opaque host-only cookie with server-side token digests and session-bound double-submit HMAC CSRF checks. Bearer authorization remains available to non-browser API clients. Cookies are `Secure` in production and `SameSite=Lax`, so the browser app/API must share a site or use same-origin proxying.
 - Public APIs never expose private CRM notes. Administrative operations require authorization and audit. Customer emails remain unverified until a mail verification flow is configured.
 - Customer notifications are generated from public order events and are owner-scoped; internal staff notes are never included in their response. External notification delivery remains disabled until an approved provider and verification flow are configured.
 - Images use external/object-storage URLs and metadata, not large database blobs.

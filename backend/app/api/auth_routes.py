@@ -10,7 +10,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.auth import AuthContext, get_auth_context, issue_session, require_staff
+from app.core.auth import AuthContext, clear_session_cookies, csrf_token_for_session, get_auth_context, issue_session, require_staff, set_session_cookies
 from app.core.config import settings
 from app.core.passwords import hash_password, verify_password
 from app.core.rate_limit import SlidingWindowLimiter
@@ -42,15 +42,23 @@ def _rate_key(request: Request, action: str) -> str:
     return f"{action}:{host}"
 
 
-def _auth_response(customer: Customer, db: Session) -> AuthResponse:
+def _check_auth_origin(request: Request) -> None:
+    origin = request.headers.get("origin")
+    if origin is not None and origin not in settings.cors_origins:
+        raise HTTPException(status_code=403, detail="Request origin is not allowed")
+
+
+def _auth_response(customer: Customer, db: Session, response: Response) -> AuthResponse:
     token, expires_at = issue_session(customer, db)
     db.commit()
     db.refresh(customer)
-    return AuthResponse(access_token=token, expires_at=expires_at, customer=CustomerOut.model_validate(customer))
+    set_session_cookies(response, token, expires_at)
+    return AuthResponse(expires_at=expires_at, csrf_token=csrf_token_for_session(token), customer=CustomerOut.model_validate(customer))
 
 
 @router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-def register(data: RegisterRequest, request: Request, db: Session = Depends(get_db)) -> AuthResponse:
+def register(data: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+    _check_auth_origin(request)
     register_limiter.check(_rate_key(request, "register"))
     customer = Customer(
         email_normalized=data.email,
@@ -65,15 +73,15 @@ def register(data: RegisterRequest, request: Request, db: Session = Depends(get_
     db.add(customer)
     try:
         db.flush()
-        response = _auth_response(customer, db)
-        return response
+        return _auth_response(customer, db, response)
     except IntegrityError as error:
         db.rollback()
         raise HTTPException(status_code=409, detail="An account with this email already exists") from error
 
 
 @router.post("/login", response_model=AuthResponse)
-def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)) -> AuthResponse:
+def login(data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> AuthResponse:
+    _check_auth_origin(request)
     login_limiter.check(_rate_key(request, "login"))
     email = data.email.strip().lower()
     customer = db.scalar(select(Customer).where(Customer.email_normalized == email))
@@ -81,11 +89,12 @@ def login(data: LoginRequest, request: Request, db: Session = Depends(get_db)) -
     valid_password = verify_password(data.password.get_secret_value(), encoded)
     if customer is None or not valid_password or not customer.is_active:
         raise HTTPException(status_code=401, detail="Invalid email or password", headers={"WWW-Authenticate": "Bearer"})
-    return _auth_response(customer, db)
+    return _auth_response(customer, db, response)
 
 
 @router.get("/me", response_model=CustomerOut)
-def get_me(context: AuthContext = Depends(get_auth_context)) -> CustomerOut:
+def get_me(response: Response, context: AuthContext = Depends(get_auth_context)) -> CustomerOut:
+    response.headers["X-CSRF-Token"] = csrf_token_for_session(context.raw_token)
     return CustomerOut.model_validate(context.customer)
 
 
@@ -99,9 +108,10 @@ def update_me(data: ProfileUpdate, context: AuthContext = Depends(get_auth_conte
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> None:
+def logout(response: Response, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> None:
     context.session.revoked_at = datetime.now(UTC)
     db.commit()
+    clear_session_cookies(response)
 
 
 def _notification_out(notification: CustomerNotification) -> NotificationOut:

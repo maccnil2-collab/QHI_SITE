@@ -26,7 +26,7 @@ Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 i
 ## Checks performed
 - Python, Node.js, npm, Git versions and venv package inventory succeeded; `pip check` reports no broken requirements.
 - PostgreSQL service is Running and accepts TCP connections. `psql -w` without a password was rejected; no password was attempted.
-- 47 API, readiness/security headers, pricing, auth/session/notification/document, order, CRM analytics, quote calculator/rate-limit, admin-guard, and CORS tests passed; compileall passed; Alembic offline SQL generated through head `0009_crm_analytics_indexes`.
+- 50 API, readiness/security headers, pricing, auth/session/notification/document, order, CRM analytics, quote calculator/rate-limit, admin-guard, and CORS tests passed; compileall passed; Alembic offline SQL generated through head `0009_crm_analytics_indexes`.
 - OpenAPI smoke test returned 40 paths, including date-bounded CRM analytics, database readiness, customer session and notification controls, staff document upload, owner/visibility-scoped downloads, orders, and admin routes.
 - Base locale dictionaries match; account dictionaries have 44 matching keys and CRM dictionaries have 85 matching keys per locale, and execute under Node 26 strip-types. JSON package/TypeScript manifests parse. All 18 TypeScript/TSX files pass TypeScript syntax transpilation using the compiler bundled with VS Code; this does not replace semantic typechecking or a Next build.
 - npm registry lookup failed with EACCES. Next.js build/typecheck and Playwright tests were not run. `DATABASE_URL` is not set and `backend/.env` is absent, so no migration was applied to PostgreSQL. No secret was guessed or emitted.
@@ -37,3 +37,5 @@ The execution environment previously blocked winget and pip network access. Work
 - Admin catalog, tariff, and customer/staff role screens provide Russian, Tajik, and English labels; full Next build and browser checks remain blocked on npm package access.
 
 - A rootless API/web plus private PostgreSQL Compose deployment starter and deployment guide are present. Docker is not installed, so images and health checks are unverified; the npm lockfile is still missing.
+
+- Browser auth now uses HttpOnly session cookies with HMAC-bound CSRF checks and Origin validation. SQLite API integration tests cover login, session restoration, protected mutations, and logout; production-cookie flags and CORS header exposure are tested.

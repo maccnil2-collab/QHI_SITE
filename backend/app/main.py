@@ -34,7 +34,8 @@ def create_app(environment: str | None = None) -> FastAPI:
         allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allow_headers=["Authorization", "Content-Type", "X-Admin-Token", "X-File-Name"],
+        allow_headers=["Authorization", "Content-Type", "X-Admin-Token", "X-File-Name", "X-CSRF-Token"],
+        expose_headers=["X-CSRF-Token"],
     )
     application.include_router(router, prefix="/api/v1")
     application.include_router(admin_router, prefix="/api/v1")
