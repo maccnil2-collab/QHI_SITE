@@ -49,13 +49,13 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 - Alembic generated offline PostgreSQL SQL through migration head `0009_crm_analytics_indexes`.
 - OpenAPI exposes 40 paths, including date-bounded CRM analytics, database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, and admin routes.
 - API responses include baseline anti-sniffing, clickjacking, referrer, and permissions-policy headers; readiness returns a generic 503 without leaking database errors.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 85-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 85-key schemas; both execute under Node's TypeScript stripping mode. All 18 TypeScript/TSX files pass compiler syntax parsing using VS Code's bundled TypeScript, including the localized admin dictionary. Admin catalog, tariff, and customer/staff role screens provide ru/tg/en labels.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues
 
 - npm registry requests fail with EACCES and the local npm cache has no usable Next.js packages. Therefore Next build, TypeScript typecheck, and Playwright runs have not been performed.
-- PostgreSQL accepts TCP connections, but `DATABASE_URL` is not configured and no `backend/.env` exists. No password was guessed, printed, or written. Migrations have only been generated offline, not applied to the running instance.
+- PostgreSQL accepts TCP connections; a read-only local query to the default `postgres` database also failed without credentials. `DATABASE_URL` is not configured and no `backend/.env` exists. No password was guessed, printed, or written. Migrations have only been generated offline, not applied to the running instance.
 - RAM and free disk are point-in-time measurements. Figma version was not queried. The Windows registry identity/build combination is recorded verbatim and should be checked in Settings if the exact Windows edition is operationally important.
 - See `reports/ENVIRONMENT_AUDIT.md` and `docs/DEVELOPMENT_STATUS.md` for implementation and security status.
 

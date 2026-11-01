@@ -27,8 +27,10 @@ Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 i
 - PostgreSQL service is Running and accepts TCP connections. `psql -w` without a password was rejected; no password was attempted.
 - 46 API, readiness/security headers, pricing, auth/session/notification/document, order, CRM analytics, quote calculator/rate-limit, admin-guard, and CORS tests passed; compileall passed; Alembic offline SQL generated through head `0009_crm_analytics_indexes`.
 - OpenAPI smoke test returned 40 paths, including date-bounded CRM analytics, database readiness, customer session and notification controls, staff document upload, owner/visibility-scoped downloads, orders, and admin routes.
-- Base locale dictionaries match; account dictionaries have 44 matching keys and CRM dictionaries have 85 matching keys per locale, and execute under Node 26 strip-types. JSON package/TypeScript manifests parse. All 17 TypeScript/TSX files pass TypeScript syntax transpilation using the compiler bundled with VS Code; this does not replace semantic typechecking or a Next build.
+- Base locale dictionaries match; account dictionaries have 44 matching keys and CRM dictionaries have 85 matching keys per locale, and execute under Node 26 strip-types. JSON package/TypeScript manifests parse. All 18 TypeScript/TSX files pass TypeScript syntax transpilation using the compiler bundled with VS Code; this does not replace semantic typechecking or a Next build.
 - npm registry lookup failed with EACCES. Next.js build/typecheck and Playwright tests were not run. `DATABASE_URL` is not set and `backend/.env` is absent, so no migration was applied to PostgreSQL. No secret was guessed or emitted.
 
 ## Constraints
 The execution environment previously blocked winget and pip network access. Work uses existing local tools and dependencies. No Windows system settings were changed.
+
+- Admin catalog, tariff, and customer/staff role screens provide Russian, Tajik, and English labels; full Next build and browser checks remain blocked on npm package access.
