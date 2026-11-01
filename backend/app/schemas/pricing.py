@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, Field
@@ -9,6 +9,8 @@ class QuoteRequest(BaseModel):
 
 
 class QuoteOut(BaseModel):
+    id: int
+    created_at: datetime
     currency: str = "TJS"
     car_tjs: Decimal
     shipping_tjs: Decimal

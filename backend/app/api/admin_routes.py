@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models import AuditEvent, Car, CarImage, CarTranslation, PricingTariff
 from app.schemas.admin import CarWrite, TariffOut, TariffWrite
 from app.schemas.car import CarOut
+from app.services.pricing import Tariff
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -88,7 +89,11 @@ def create_tariff(data: TariffWrite, actor: str = Depends(require_admin), db: Se
     db.add(tariff)
     db.flush()
     audit(db, actor, "create", "pricing_tariff", tariff.id, {**tariff_audit_payload(tariff), "active": False})
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Tariff could not be saved; retry the request") from error
     db.refresh(tariff)
     return tariff
 
@@ -98,6 +103,10 @@ def activate_tariff(tariff_id: int, actor: str = Depends(require_admin), db: Ses
     tariff = db.get(PricingTariff, tariff_id)
     if tariff is None:
         raise HTTPException(status_code=404, detail="Tariff not found")
+    config = Tariff(tariff.name, tariff.effective_on, tariff.cny_to_tjs, tariff.shipping_tjs, tariff.customs_rate, tariff.customs_basis, tariff.additional_tjs, tariff.paperwork_tjs)
+    missing = config.missing()
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Cannot activate incomplete tariff: {', '.join(missing)}")
     previous = db.scalars(select(PricingTariff).where(PricingTariff.active.is_(True))).all()
     db.execute(update(PricingTariff).values(active=False))
     for old in previous:
@@ -105,7 +114,11 @@ def activate_tariff(tariff_id: int, actor: str = Depends(require_admin), db: Ses
             audit(db, actor, "deactivate", "pricing_tariff", old.id, {"name": old.name})
     tariff.active = True
     audit(db, actor, "activate", "pricing_tariff", tariff.id, tariff_audit_payload(tariff))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Concurrent tariff activation; retry the request") from error
     db.refresh(tariff)
     return tariff
 

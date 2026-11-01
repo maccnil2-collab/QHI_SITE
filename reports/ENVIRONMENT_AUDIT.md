@@ -25,7 +25,7 @@ Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 i
 ## Checks performed
 - Python, Node.js, npm, Git versions and venv package inventory succeeded; `pip check` reports no broken requirements.
 - PostgreSQL service is Running and accepts TCP connections. `psql -w` without a password was rejected; no password was attempted.
-- Ten API/pricing/admin-guard/CORS/translation tests passed; compileall passed; Alembic offline SQL generation/history passed.
+- Eleven API/pricing/admin-guard/CORS/translation tests passed; compileall passed; Alembic offline SQL generation/history passed.
 - Uvicorn smoke test returned HTTP 200 from `/api/v1/health` and `/openapi.json`; OpenAPI contained catalog and admin routes.
 - Translation dictionaries decoded as UTF-8 and contain 53 matching keys per locale.
 - npm registry lookup failed with EACCES. Next.js build, DB migration against the running server, and Playwright tests were not run.

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.models import Car, CarTranslation, PricingTariff
+from app.models import Car, CarTranslation, PricingTariff, PriceQuote
 from app.schemas.car import CarOut
 from app.schemas.pricing import QuoteOut, QuoteRequest
 from app.services.pricing import Tariff, calculate_quote
@@ -65,6 +65,26 @@ def quote(request: QuoteRequest, db: Session = Depends(get_db)) -> QuoteOut:
         paperwork_tjs=tariff.paperwork_tjs,
     )
     try:
-        return QuoteOut(**calculate_quote(request.price_cny, config))
+        result = calculate_quote(request.price_cny, config)
     except ValueError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+    quote = PriceQuote(
+        tariff_id=tariff.id,
+        tariff_name=tariff.name,
+        effective_on=tariff.effective_on,
+        currency=tariff.currency,
+        price_cny=request.price_cny,
+        cny_to_tjs=tariff.cny_to_tjs,
+        shipping_tjs=tariff.shipping_tjs,
+        customs_rate=tariff.customs_rate,
+        customs_basis=tariff.customs_basis,
+        additional_tjs=tariff.additional_tjs,
+        paperwork_tjs=tariff.paperwork_tjs,
+        car_tjs=result["car_tjs"],
+        customs_tjs=result["customs_tjs"],
+        total_tjs=result["total_tjs"],
+    )
+    db.add(quote)
+    db.commit()
+    db.refresh(quote)
+    return QuoteOut(id=quote.id, created_at=quote.created_at, currency=quote.currency, **result)

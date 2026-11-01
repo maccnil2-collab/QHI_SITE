@@ -41,7 +41,7 @@ class TariffWrite(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     cny_to_tjs: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=6)
     shipping_tjs: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)
-    customs_rate: Decimal | None = Field(default=None, ge=0, le=1, max_digits=8, decimal_places=6)
+    customs_rate: Decimal | None = Field(default=None, ge=0, max_digits=8, decimal_places=6)
     customs_basis: CustomsBasis | None = None
     additional_tjs: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)
     paperwork_tjs: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)

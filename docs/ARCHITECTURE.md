@@ -12,7 +12,7 @@ Catalog (makes, models, trims, specifications, images, availability); Pricing (v
 ## Decisions
 - Store money as Decimal with currency and exchange-rate source/date.
 - Customs rates, customs calculation basis, and other legal/commercial tariffs have no defaults and carry an effective date. Incomplete tariffs prevent quoting.
-- A quote stores its input, tariff version, and date so future tariff edits do not rewrite a prior quote.
+- Each issued quote is persisted with its input, tariff version, full cost-component snapshots, and timestamp, so later tariff edits do not rewrite prior calculations. Customs rates are stored as fractions (0.15 means 15%). Incomplete tariffs may be saved as drafts but cannot be activated.
 - PostgreSQL is required in production. SQLite is allowed only for isolated unit tests when a driver is available.
 - Public APIs never expose private CRM notes. Administrative operations require authorization and audit.
 - Images use external/object-storage URLs and metadata, not large database blobs.

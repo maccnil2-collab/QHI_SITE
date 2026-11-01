@@ -9,7 +9,7 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
 - [x] Localized responsive catalog source (ru/tg/en); build awaits npm registry access.
 - [ ] Install frontend dependencies from a lockfile, build, and typecheck.
-- [ ] Apply migrations and run integration tests with private application DB credentials.
+- [ ] Apply migrations and run integration tests with private application DB credentials. The current migration head includes catalog, audit, and quote snapshots.
 - [x] Initial API-key-protected admin catalog/tariff management and audit trail.
 - [ ] Replace bootstrap admin key with user/role based access and build the web admin panel.
 - [ ] Customer identity, profiles, favorites, and persisted comparisons.

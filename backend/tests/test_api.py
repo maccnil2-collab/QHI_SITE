@@ -63,3 +63,19 @@ def test_catalog_returns_selected_vehicle_translation(monkeypatch):
     assert response.status_code == 200
     assert response.json()[0]["localized_title"] == "\u041c\u043e\u0448\u0438\u043d"
     assert response.json()[0]["localized_description"] == "\u0422\u0430\u0432\u0441\u0438\u0444"
+
+def test_incomplete_tariff_cannot_be_activated(monkeypatch):
+    from datetime import date
+    from app.core import admin_auth
+    from app.core.config import Settings
+
+    monkeypatch.setattr(admin_auth, "settings", Settings(database_url=None, cors_origins=[], admin_api_key="x" * 40))
+    tariff = SimpleNamespace(name="draft", effective_on=date(2026, 1, 1), cny_to_tjs=None, shipping_tjs=None, customs_rate=None, customs_basis=None, additional_tjs=None, paperwork_tjs=None)
+    fake_db = SimpleNamespace(get=lambda _model, _id: tariff)
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: fake_db)
+    try:
+        response = client.post("/api/v1/admin/tariffs/3/activate", headers={"X-Admin-Token": "x" * 40})
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 422
+    assert response.json()["detail"].startswith("Cannot activate incomplete tariff")
