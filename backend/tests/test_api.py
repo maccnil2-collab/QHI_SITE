@@ -79,3 +79,9 @@ def test_incomplete_tariff_cannot_be_activated(monkeypatch):
         app.dependency_overrides.pop(get_db, None)
     assert response.status_code == 422
     assert response.json()["detail"].startswith("Cannot activate incomplete tariff")
+
+def test_order_and_staff_crm_routes_require_login_before_database_access():
+    for path in ("/api/v1/auth/me/orders", "/api/v1/auth/staff/orders", "/api/v1/crm/overview"):
+        response = client.get(path)
+        assert response.status_code == 401
+        assert response.headers["www-authenticate"] == "Bearer"

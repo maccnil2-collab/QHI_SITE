@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class QuoteRequest(BaseModel):
@@ -9,9 +9,14 @@ class QuoteRequest(BaseModel):
 
 
 class QuoteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime
     currency: str = "TJS"
+    price_cny: Decimal
+    cny_to_tjs: Decimal
+    customs_rate: Decimal
     car_tjs: Decimal
     shipping_tjs: Decimal
     customs_tjs: Decimal

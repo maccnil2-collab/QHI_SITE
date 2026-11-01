@@ -63,3 +63,7 @@ class TariffOut(BaseModel):
     effective_on: date
     source_note: str | None
     active: bool
+
+
+class RoleChange(BaseModel):
+    role: Literal["customer", "manager", "admin"]

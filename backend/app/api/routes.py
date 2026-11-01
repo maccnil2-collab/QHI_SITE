@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.auth import get_optional_customer
 from app.core.config import settings
 from app.db.session import get_db
-from app.models import Car, CarTranslation, PricingTariff, PriceQuote
+from app.models import Car, CarTranslation, Customer, PricingTariff, PriceQuote
 from app.schemas.car import CarOut
 from app.schemas.pricing import QuoteOut, QuoteRequest
 from app.services.pricing import Tariff, calculate_quote
@@ -50,7 +51,7 @@ def list_cars(
 
 
 @router.post("/quotes", response_model=QuoteOut)
-def quote(request: QuoteRequest, db: Session = Depends(get_db)) -> QuoteOut:
+def quote(request: QuoteRequest, db: Session = Depends(get_db), customer: Customer | None = Depends(get_optional_customer)) -> QuoteOut:
     tariff = db.scalar(select(PricingTariff).where(PricingTariff.active.is_(True), PricingTariff.effective_on <= date.today()).order_by(PricingTariff.effective_on.desc()))
     if tariff is None:
         raise HTTPException(status_code=503, detail="No current pricing tariff is configured")
@@ -70,6 +71,7 @@ def quote(request: QuoteRequest, db: Session = Depends(get_db)) -> QuoteOut:
         raise HTTPException(status_code=503, detail=str(error)) from error
     quote = PriceQuote(
         tariff_id=tariff.id,
+        customer_id=customer.id if customer else None,
         tariff_name=tariff.name,
         effective_on=tariff.effective_on,
         currency=tariff.currency,
@@ -87,4 +89,4 @@ def quote(request: QuoteRequest, db: Session = Depends(get_db)) -> QuoteOut:
     db.add(quote)
     db.commit()
     db.refresh(quote)
-    return QuoteOut(id=quote.id, created_at=quote.created_at, currency=quote.currency, **result)
+    return QuoteOut(id=quote.id, created_at=quote.created_at, currency=quote.currency, price_cny=quote.price_cny, cny_to_tjs=quote.cny_to_tjs, customs_rate=quote.customs_rate, **result)

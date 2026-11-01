@@ -8,13 +8,15 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Architecture, directory layout, and security baseline.
 - [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
 - [x] Localized responsive catalog source (ru/tg/en); build awaits npm registry access.
-- [ ] Install frontend dependencies from a lockfile, build, and typecheck.
-- [ ] Apply migrations and run integration tests with private application DB credentials. The current migration head includes catalog, audit, and quote snapshots.
+- [ ] Install frontend dependencies from a lockfile, build, and typecheck (npm registry currently returns EACCES).
+- [ ] Apply migrations and run integration tests with private application DB credentials. Current migration head: `0006_crm`.
 - [x] Initial API-key-protected admin catalog/tariff management and audit trail.
-- [ ] Replace bootstrap admin key with user/role based access and build the web admin panel.
-- [ ] Customer identity, profiles, favorites, and persisted comparisons.
-- [ ] Orders, logistics events, documents, notifications.
-- [ ] CRM leads, customer interactions, manager assignments, analytics.
+- [x] Admin surfaces for catalog, tariffs, customer/staff role management; bootstrap-key auth remains transitional.
+- [x] Customer identity, profiles, favorites, and persisted comparisons API; account UI source added but needs a real frontend build.
+- [x] Backend order creation, ownership, status transitions, and event timeline.
+- [ ] Order administration UI, secure document storage, and notifications; customer order request screen source exists but is unbuilt.
+- [x] Backend CRM leads, interactions, manager assignments, and status counts.
+- [ ] CRM management UI and sales analytics; backend API is available.
 - [ ] Complete localization, accessibility, performance, and security checks.
 - [ ] Deployment, backup/restore, monitoring, and operations guide.
 

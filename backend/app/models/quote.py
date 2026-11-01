@@ -12,6 +12,7 @@ class PriceQuote(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tariff_id: Mapped[int] = mapped_column(ForeignKey("pricing_tariffs.id", ondelete="RESTRICT"), index=True)
+    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id", ondelete="SET NULL"), nullable=True, index=True)
     tariff_name: Mapped[str] = mapped_column(String(120))
     effective_on: Mapped[date] = mapped_column(Date)
     currency: Mapped[str] = mapped_column(String(3), default="TJS")

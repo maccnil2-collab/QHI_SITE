@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.admin_auth import require_admin
 from app.db.session import get_db
-from app.models import AuditEvent, Car, CarImage, CarTranslation, PricingTariff
-from app.schemas.admin import CarWrite, TariffOut, TariffWrite
+from app.models import AuditEvent, Car, CarImage, CarTranslation, Customer, PricingTariff
+from app.schemas.admin import CarWrite, RoleChange, TariffOut, TariffWrite
 from app.schemas.car import CarOut
+from app.schemas.auth import CustomerOut
 from app.services.pricing import Tariff
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -132,3 +133,26 @@ def set_car_publication(car_id: int, published: bool, actor: str = Depends(requi
     db.commit()
     db.refresh(car)
     return car_output(car)
+
+
+@router.get("/customers", response_model=list[CustomerOut])
+def admin_list_customers(limit: int = Query(default=50, ge=1, le=100), offset: int = Query(default=0, ge=0), actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> list[CustomerOut]:
+    customers = db.scalars(select(Customer).order_by(Customer.created_at.desc()).limit(limit).offset(offset)).all()
+    return [CustomerOut.model_validate(customer) for customer in customers]
+
+
+@router.patch("/customers/{customer_id}/role", response_model=CustomerOut)
+def set_customer_role(customer_id: int, data: RoleChange, actor: str = Depends(require_admin), db: Session = Depends(get_db)) -> CustomerOut:
+    # Lock the active admin set to prevent concurrent requests removing its last member.
+    active_admins = db.scalars(select(Customer).where(Customer.role == "admin", Customer.is_active.is_(True)).order_by(Customer.id).with_for_update()).all()
+    customer = db.scalar(select(Customer).where(Customer.id == customer_id).with_for_update())
+    if customer is None:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    if customer.role == "admin" and customer.is_active and data.role != "admin" and len(active_admins) <= 1:
+        raise HTTPException(status_code=409, detail="Cannot remove the last active administrator")
+    previous_role = customer.role
+    customer.role = data.role
+    audit(db, actor, "role_change", "customer", customer.id, {"from": previous_role, "to": data.role})
+    db.commit()
+    db.refresh(customer)
+    return CustomerOut.model_validate(customer)
