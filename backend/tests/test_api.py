@@ -1,4 +1,9 @@
+from decimal import Decimal
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
+
+from app.db.session import get_db
 from app.main import app
 
 client = TestClient(app)
@@ -39,3 +44,22 @@ def test_cors_allows_admin_header_from_local_frontend():
     )
     assert response.status_code == 200
     assert "x-admin-token" in response.headers["access-control-allow-headers"].lower()
+
+
+def test_catalog_returns_selected_vehicle_translation(monkeypatch):
+    car = SimpleNamespace(
+        id=7, slug="test-ev", brand="Test", model="EV", trim=None, year=2026,
+        price_cny=Decimal("10000"), range_km=500, battery_kwh=Decimal("70"),
+        power_kw=200, drivetrain="AWD", availability="on_request",
+        images=[SimpleNamespace(url="https://example.invalid/vehicle.jpg")],
+        translations=[SimpleNamespace(locale="tg", title="\u041c\u043e\u0448\u0438\u043d", description="\u0422\u0430\u0432\u0441\u0438\u0444")],
+    )
+    fake_db = SimpleNamespace(scalars=lambda _statement: SimpleNamespace(all=lambda: [car]))
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: fake_db)
+    try:
+        response = client.get("/api/v1/cars?locale=tg")
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    assert response.json()[0]["localized_title"] == "\u041c\u043e\u0448\u0438\u043d"
+    assert response.json()[0]["localized_description"] == "\u0422\u0430\u0432\u0441\u0438\u0444"

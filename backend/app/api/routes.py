@@ -1,13 +1,14 @@
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.models import Car, PricingTariff
+from app.models import Car, CarTranslation, PricingTariff
 from app.schemas.car import CarOut
 from app.schemas.pricing import QuoteOut, QuoteRequest
 from app.services.pricing import Tariff, calculate_quote
@@ -23,6 +24,7 @@ def health() -> dict[str, str]:
 @router.get("/cars", response_model=list[CarOut])
 def list_cars(
     q: str | None = Query(default=None, min_length=1, max_length=100),
+    locale: Literal["ru", "tg", "en"] = "ru",
     brand: str | None = Query(default=None, max_length=80),
     min_price_cny: Decimal | None = Query(default=None, ge=0),
     max_price_cny: Decimal | None = Query(default=None, ge=0),
@@ -31,10 +33,10 @@ def list_cars(
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[CarOut]:
-    statement = select(Car).options(selectinload(Car.images)).where(Car.published.is_(True))
+    statement = select(Car).options(selectinload(Car.images), selectinload(Car.translations)).where(Car.published.is_(True))
     if q:
         term = f"%{q.strip()}%"
-        statement = statement.where(or_(Car.brand.ilike(term), Car.model.ilike(term), Car.trim.ilike(term)))
+        statement = statement.where(or_(Car.brand.ilike(term), Car.model.ilike(term), Car.trim.ilike(term), Car.translations.any(and_(CarTranslation.locale == locale, CarTranslation.title.ilike(term)))))
     if brand:
         statement = statement.where(Car.brand.ilike(brand.strip()))
     if min_price_cny is not None:
@@ -44,7 +46,7 @@ def list_cars(
     if min_range_km is not None:
         statement = statement.where(Car.range_km >= min_range_km)
     cars = db.scalars(statement.order_by(Car.brand, Car.model).limit(limit).offset(offset)).all()
-    return [CarOut.model_validate({**{key: getattr(car, key) for key in CarOut.model_fields if key != "images"}, "images": [image.url for image in car.images]}) for car in cars]
+    return [CarOut.model_validate({**{key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}, "localized_title": next((item.title for item in car.translations if item.locale == locale), f"{car.brand} {car.model}"), "localized_description": next((item.description for item in car.translations if item.locale == locale), None), "images": [image.url for image in car.images]}) for car in cars]
 
 
 @router.post("/quotes", response_model=QuoteOut)

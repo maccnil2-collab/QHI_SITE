@@ -1,4 +1,4 @@
-﻿from decimal import Decimal
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,4 +18,6 @@ class CarOut(BaseModel):
     power_kw: int | None
     drivetrain: str | None
     availability: str
+    localized_title: str | None = None
+    localized_description: str | None = None
     images: list[str] = Field(default_factory=list)
