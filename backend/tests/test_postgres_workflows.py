@@ -163,7 +163,24 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         headers = {"X-Admin-Token": os.environ["ADMIN_API_KEY"]}
         admin_catalog = client.get("/api/v1/admin/cars", headers=headers)
         assert admin_catalog.status_code == 200, admin_catalog.text
-        assert next(item for item in admin_catalog.json() if item["id"] == car_id)["published"] is True
+        admin_car = next(item for item in admin_catalog.json() if item["id"] == car_id)
+        assert admin_car["published"] is True
+        update_payload = {
+            key: admin_car[key]
+            for key in (
+                "slug", "brand", "model", "trim", "year", "price_cny", "range_km",
+                "battery_kwh", "power_kw", "drivetrain", "availability", "published",
+            )
+        }
+        update_payload["image_urls"] = admin_car["images"]
+        update_payload["translations"] = admin_car["translations"]
+        updated_car = client.put(f"/api/v1/admin/cars/{car_id}", json=update_payload, headers=headers)
+        assert updated_car.status_code == 200, updated_car.text
+        assert updated_car.json()["published"] is True
+        unpublished = client.patch(f"/api/v1/admin/cars/{car_id}/publication?published=false", headers=headers)
+        assert unpublished.status_code == 200 and unpublished.json()["published"] is False
+        republished = client.patch(f"/api/v1/admin/cars/{car_id}/publication?published=true", headers=headers)
+        assert republished.status_code == 200 and republished.json()["published"] is True
         staff_leads = client.get("/api/v1/crm/leads")
         assert staff_leads.status_code == 200, staff_leads.text
         changed = client.patch(f"/api/v1/crm/leads/{lead_id}", json={"status": "contacted"}, headers={"X-CSRF-Token": csrf})

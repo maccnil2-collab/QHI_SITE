@@ -325,6 +325,34 @@ def test_admin_car_output_contains_translations_for_edit_form():
     assert {item.locale for item in result.translations} == {"ru", "tg", "en"}
 
 
+def test_admin_car_edit_updates_translations_in_place():
+    from app.api.admin_routes import apply_car
+    from app.models import Car, CarTranslation
+    from app.schemas.admin import CarWrite
+
+    existing = {
+        locale: CarTranslation(locale=locale, title=f"Old {locale}", description=None)
+        for locale in ("ru", "tg", "en")
+    }
+    car = Car(translations=list(existing.values()))
+    data = CarWrite.model_validate({
+        "slug": "sample-ev", "brand": "Sample", "model": "EV", "year": 2026,
+        "price_cny": "10000", "translations": [
+            {"locale": "ru", "title": "New RU"},
+            {"locale": "tg", "title": "New TG"},
+            {"locale": "en", "title": "New EN"},
+        ],
+    })
+
+    apply_car(car, data)
+
+    assert len(car.translations) == 3
+    assert all(existing[item.locale] is item for item in car.translations)
+    assert {item.locale: item.title for item in car.translations} == {
+        "ru": "New RU", "tg": "New TG", "en": "New EN",
+    }
+
+
 def test_admin_car_write_requires_unique_ru_tg_en_translations():
     import pytest
     from pydantic import ValidationError

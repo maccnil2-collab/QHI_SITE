@@ -38,9 +38,19 @@ def apply_car(car: Car, data: CarWrite) -> None:
     for key in ("slug", "brand", "model", "trim", "year", "price_cny", "range_km", "battery_kwh", "power_kw", "drivetrain", "availability", "published"):
         setattr(car, key, getattr(data, key))
     car.images.clear()
-    car.translations.clear()
     car.images.extend(CarImage(url=str(url), sort_order=index) for index, url in enumerate(data.image_urls))
-    car.translations.extend(CarTranslation(locale=item.locale, title=item.title, description=item.description) for item in data.translations)
+    existing_translations = {item.locale: item for item in car.translations}
+    submitted_locales = {item.locale for item in data.translations}
+    for locale, translation in existing_translations.items():
+        if locale not in submitted_locales:
+            car.translations.remove(translation)
+    for item in data.translations:
+        translation = existing_translations.get(item.locale)
+        if translation is None:
+            car.translations.append(CarTranslation(locale=item.locale, title=item.title, description=item.description))
+        else:
+            translation.title = item.title
+            translation.description = item.description
 
 
 @router.get("/cars", response_model=list[AdminCarOut])
