@@ -22,6 +22,7 @@ Updated: 2026-11-01
 
 - Backend tests: **52 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning).
 - Python compileall: **PASS**.
+- TypeScript/TSX syntax transpilation: **PASS (22 files)** using the VS Code-bundled compiler; this is syntax-only, not a semantic typecheck.
 - pip check: **PASS**.
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; nine migrations applied, head is `0009_crm_analytics_indexes`, 17 public tables.
 - `alembic check`: **PASS**, no model/schema differences.

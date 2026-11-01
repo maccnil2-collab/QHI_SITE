@@ -18,6 +18,7 @@ Current checkpoint: `ec0d0c2` (`Configure frontend lint and Playwright workflows
 | npm install / lockfile | BLOCKED: registry socket `EACCES` |
 | Dependency compatibility resolution | NOT TESTED |
 | TypeScript semantic typecheck | BLOCKED: `tsc` binary not installed |
+| TypeScript/TSX syntax transpile | PASS: 22 files via the TypeScript compiler bundled with VS Code (syntax only) |
 | Next production build | BLOCKED: `next` binary not installed |
 | ESLint | Configured; BLOCKED: `eslint` binary not installed |
 | Playwright E2E | Configured; BLOCKED: `playwright` and browser binaries not installed |
@@ -36,6 +37,7 @@ The vehicle detail route was added, and quote submission now uses the session-aw
 - The opt-in PostgreSQL API workflow test passed once. It covers registration, login/session restore, CSRF, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, and admin catalog authorization.
 - The isolated database now contains generated integration fixtures and workflow records. They were left intact. No production DB was contacted.
 - The API was started from `backend/` using only `backend/.env` on the normal local port `127.0.0.1:8000`; live `/health` and `/ready` returned `ok`/`ready` with database connected. It is currently running for local use.
+- Live HTTP checks against uvicorn returned 200 for health, readiness, localized catalog/search, vehicle detail, and quote calculation (test quote total 14,450.00 TJS).
 - Docker and Compose are unavailable in PATH. Compose/image/health checks remain unverified.
 
 ## User journey verification status
