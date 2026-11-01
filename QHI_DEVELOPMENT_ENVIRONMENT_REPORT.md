@@ -44,11 +44,11 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 30 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 32 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
 - Alembic generated offline PostgreSQL SQL through migration head `0006_crm`.
-- Uvicorn served OpenAPI with 29 paths, including auth, customer orders, CRM, and admin routes.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 29-key schemas and execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
+- OpenAPI exposes 31 paths, including active customer-session listing and owner-scoped revocation, orders, CRM, and admin routes.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 35-key schemas and CRM dictionaries matching 61-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues

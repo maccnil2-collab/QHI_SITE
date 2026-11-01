@@ -47,6 +47,37 @@ def test_private_profile_requires_a_bearer_token_without_opening_database():
     assert response.headers["www-authenticate"] == "Bearer"
 
 
+def test_session_management_contract_hides_token_material_and_protects_current_session():
+    from datetime import UTC, datetime
+    from types import SimpleNamespace
+    from fastapi import HTTPException
+
+    from app.api.auth_routes import revoke_my_session
+    from app.schemas.auth import CustomerSessionOut
+
+    created = datetime.now(UTC)
+    session = CustomerSessionOut(id=12, created_at=created, expires_at=created, current=True)
+    assert set(session.model_dump()) == {"id", "created_at", "expires_at", "current"}
+    assert "token" not in session.model_dump()
+    context = SimpleNamespace(session=SimpleNamespace(id=12), customer=SimpleNamespace(id=4))
+    with pytest.raises(HTTPException) as error:
+        revoke_my_session(12, context=context, db=None)
+    assert error.value.status_code == 409
+
+
+def test_session_revocation_cannot_target_another_customers_session():
+    from types import SimpleNamespace
+    from fastapi import HTTPException
+
+    from app.api.auth_routes import revoke_my_session
+
+    context = SimpleNamespace(session=SimpleNamespace(id=12), customer=SimpleNamespace(id=4))
+    db = SimpleNamespace(scalar=lambda _query: None)
+    with pytest.raises(HTTPException) as error:
+        revoke_my_session(99, context=context, db=db)
+    assert error.value.status_code == 404
+
+
 def test_comparison_is_limited_to_three_unique_vehicles():
     from pydantic import ValidationError
     from app.schemas.customer import ComparisonUpdate

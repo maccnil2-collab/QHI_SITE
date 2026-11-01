@@ -12,8 +12,8 @@ from app.core.auth import AuthContext, get_auth_context, issue_session, require_
 from app.core.passwords import hash_password, verify_password
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
-from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, OrderEvent, PriceQuote, VehicleOrder
-from app.schemas.auth import AuthResponse, CustomerOut, LoginRequest, ProfileUpdate, RegisterRequest
+from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerSession, OrderEvent, PriceQuote, VehicleOrder
+from app.schemas.auth import AuthResponse, CustomerOut, CustomerSessionOut, LoginRequest, ProfileUpdate, RegisterRequest
 from app.schemas.car import CarOut
 from app.schemas.customer import ComparisonUpdate, FavoriteStatus
 from app.services.orders import transition_order
@@ -94,6 +94,45 @@ def update_me(data: ProfileUpdate, context: AuthContext = Depends(get_auth_conte
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> None:
     context.session.revoked_at = datetime.now(UTC)
+    db.commit()
+
+
+@router.get("/me/sessions", response_model=list[CustomerSessionOut])
+def list_my_sessions(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> list[CustomerSessionOut]:
+    sessions = db.scalars(
+        select(CustomerSession)
+        .where(
+            CustomerSession.customer_id == context.customer.id,
+            CustomerSession.revoked_at.is_(None),
+            CustomerSession.expires_at > datetime.now(UTC),
+        )
+        .order_by(CustomerSession.created_at.desc())
+    ).all()
+    return [
+        CustomerSessionOut(
+            id=session.id,
+            created_at=session.created_at,
+            expires_at=session.expires_at,
+            current=session.id == context.session.id,
+        )
+        for session in sessions
+    ]
+
+
+@router.delete("/me/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def revoke_my_session(session_id: int, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> None:
+    if session_id == context.session.id:
+        raise HTTPException(status_code=409, detail="Use sign out to revoke the current session")
+    session = db.scalar(
+        select(CustomerSession).where(
+            CustomerSession.id == session_id,
+            CustomerSession.customer_id == context.customer.id,
+            CustomerSession.revoked_at.is_(None),
+        )
+    )
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session.revoked_at = datetime.now(UTC)
     db.commit()
 
 

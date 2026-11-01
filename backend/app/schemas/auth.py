@@ -72,3 +72,12 @@ class AuthResponse(BaseModel):
     token_type: str = "bearer"
     expires_at: datetime
     customer: CustomerOut
+
+
+class CustomerSessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    expires_at: datetime
+    current: bool
