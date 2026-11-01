@@ -4,7 +4,7 @@ Priorities are ordered by dependency and risk. Do not publish legal, tariff, inv
 
 ## Progress at checkpoint `a25c10a`
 
-- Completed: isolated PostgreSQL test cluster; all nine migrations applied; schema/model comparison clean; one opt-in real PostgreSQL API workflow test passes.
+- Completed: isolated PostgreSQL test cluster; all ten migrations applied; schema/model comparison clean; PostgreSQL API workflow test passes, including concurrent shared rate-limit requests.
 - Completed: localized vehicle detail route, catalog navigation, and authenticated quote persistence; ESLint and desktop/mobile Playwright source configuration added.
 - Completed: migration `0010_shared_rate_limit_buckets`; authentication, quote, lead, and document limits are backed by atomic PostgreSQL counters, verified across independent limiter instances.
 - Blocked: npm registry socket access (`EACCES` before HTTP), so lockfile, installed toolchain, semantic typecheck, lint, Next build, and browser execution remain outstanding.
