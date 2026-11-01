@@ -1,7 +1,7 @@
 # Frontend and database readiness check
 
 Date: 2026-11-01  
-Current checkpoint: `ec0d0c2` (`Configure frontend lint and Playwright workflows`)
+Current checkpoint: `5590446` (`Update current project checkpoint`)
 
 ## npm registry diagnosis
 
@@ -34,7 +34,7 @@ The vehicle detail route was added, and quote submission now uses the session-aw
 - DSN: `postgresql+psycopg://postgres@127.0.0.1:55439/qhi_auto_test`.
 - Ignored local `backend/.env` and `frontend/.env.local` files are configured for this test DB and the local API URL. A new random development `ADMIN_API_KEY` is stored only in ignored `backend/.env`; its value was not printed or committed.
 - All ten migrations applied to this fresh test database. `alembic current` reports `0010_shared_rate_limit_buckets`; `alembic check` reports no model/schema differences.
-- The opt-in PostgreSQL API workflow test passed once. It covers registration, login/session restore, CSRF, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, and admin catalog authorization.
+- The opt-in PostgreSQL API workflow test passed and covers registration, login/session restore, CSRF, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, admin catalog authorization, and shared/concurrent PostgreSQL rate limits.
 - The isolated database now contains generated integration fixtures and workflow records. They were left intact. No production DB was contacted.
 - The API was started from `backend/` using only `backend/.env` on the normal local port `127.0.0.1:8000`; live `/health` and `/ready` returned `ok`/`ready` with database connected. It is currently running for local use.
 - Live HTTP checks against uvicorn returned 200 for health, readiness, localized catalog/search, vehicle detail, and quote calculation (test quote total 14,450.00 TJS).

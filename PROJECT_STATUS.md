@@ -28,6 +28,7 @@ Updated: 2026-11-01
 - `alembic check`: **PASS**, no model/schema differences.
 - Alembic now reads ignored `backend/.env` for local commands; `alembic current` and `alembic check` both pass without exporting `DATABASE_URL` manually.
 - PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM/admin access, and shared rate-limit checks across independent instances and concurrent requests).
+- Isolated database readiness and integration evidence are maintained in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md); PostgreSQL tests are explicitly opt-in and require a loopback database with a `*_test` name.
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
 - Root-level pytest invocation: **PASS** from repository root.
 - Frontend npm installation: **BLOCKED** by `EACCES` reaching `registry.npmjs.org`.
