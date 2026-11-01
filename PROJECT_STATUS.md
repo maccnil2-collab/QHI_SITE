@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest code checkpoint: `8fb2649` (`Fix frontend type contracts and admin car state`)
+- Latest code checkpoint: `42769e8` (`Fix admin vehicle translation updates`)
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented
@@ -20,7 +20,7 @@ Updated: 2026-11-01
 
 ## Verified in this takeover
 
-- Backend tests: **52 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning).
+- Backend tests: **53 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning).
 - Python compileall: **PASS**.
 - TypeScript/TSX syntax transpilation: **PASS (22 files)** using the VS Code-bundled compiler; this is syntax-only, not a semantic typecheck.
 - Isolated TypeScript semantic check for RU/TG/EN message dictionaries: **PASS**. Full-app semantic checking through the bundled compiler remains blocked by absent React/Next/Node/Playwright declarations; after fixes, the remaining diagnostics were dependency/type-resolution errors.
@@ -28,7 +28,7 @@ Updated: 2026-11-01
 - Isolated PostgreSQL 18.6 test database `qhi_auto_test` on loopback port 55439: **PASS**; ten migrations applied, head is `0010_shared_rate_limit_buckets`, schema check clean.
 - `alembic check`: **PASS**, no model/schema differences.
 - Alembic now reads ignored `backend/.env` for local commands; `alembic current` and `alembic check` both pass without exporting `DATABASE_URL` manually.
-- PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM/admin access, and shared rate-limit checks across independent instances and concurrent requests).
+- PostgreSQL-backed API workflows: **1 passed** (auth/session/CSRF, catalog/search/detail, quote/history, favorites/comparison, order, CRM, admin editing/publication, and shared rate-limit checks across independent instances and concurrent requests).
 - Fresh Uvicorn process on loopback port 18001: **PASS**; readiness connected to the isolated test DB and live login requests returned eight `401` responses followed by `429` at the configured limit. Temporary process was stopped after the check.
 - Isolated database readiness and integration evidence are maintained in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md); PostgreSQL tests are explicitly opt-in and require a loopback database with a `*_test` name.
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
