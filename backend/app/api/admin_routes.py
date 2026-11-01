@@ -17,6 +17,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 def car_output(car: Car) -> AdminCarOut:
     values = {key: getattr(car, key, CarOut.model_fields[key].default) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}
     values["images"] = [image.url for image in sorted(car.images, key=lambda item: item.sort_order)]
+    values["image_details"] = [{"url": image.url, "alt": getattr(image, "alt", None), "attribution": getattr(image, "attribution", None), "license_name": getattr(image, "license_name", None), "source_url": getattr(image, "source_url", None)} for image in sorted(car.images, key=lambda item: item.sort_order)]
     values["published"] = car.published
     values["translations"] = [{"locale": item.locale, "title": item.title, "description": item.description} for item in car.translations]
     return AdminCarOut.model_validate(values)
@@ -35,10 +36,19 @@ def tariff_audit_payload(tariff: PricingTariff) -> dict:
 
 
 def apply_car(car: Car, data: CarWrite) -> None:
-    for key in ("slug", "brand", "model", "trim", "year", "price_cny", "range_km", "fuel_consumption_l_100km", "battery_kwh", "power_kw", "drivetrain", "category", "engine_type", "engine_cc", "transmission", "mileage_km", "exterior_color", "equipment", "specifications", "is_demo", "availability", "published"):
-        setattr(car, key, getattr(data, key))
-    car.images.clear()
-    car.images.extend(CarImage(url=str(url), sort_order=index) for index, url in enumerate(data.image_urls))
+    for key in ("slug", "brand", "model", "trim", "year", "price_cny", "range_km", "fuel_consumption_l_100km", "battery_kwh", "power_kw", "drivetrain", "category", "engine_type", "engine_cc", "fuel_type", "torque_nm", "acceleration_0_100_s", "max_speed_kmh", "seats", "doors", "length_mm", "width_mm", "height_mm", "wheelbase_mm", "advantages", "price_usd", "price_tjs", "price_note", "transmission", "mileage_km", "exterior_color", "equipment", "specifications", "is_demo", "availability", "published"):
+        if key not in {"fuel_type", "torque_nm", "acceleration_0_100_s", "max_speed_kmh", "seats", "doors", "length_mm", "width_mm", "height_mm", "wheelbase_mm", "advantages", "price_usd", "price_tjs", "price_note"} or key in data.model_fields_set:
+            setattr(car, key, getattr(data, key))
+    if "specification_source" in data.model_fields_set:
+        car.specification_source = str(data.specification_source) if data.specification_source else None
+    if "price_source" in data.model_fields_set:
+        car.price_source = str(data.price_source) if data.price_source else None
+    if data.image_items:
+        car.images.clear()
+        car.images.extend(CarImage(url=str(image.url), alt=image.alt, attribution=image.attribution, license_name=image.license_name, source_url=str(image.source_url), sort_order=index) for index, image in enumerate(data.image_items))
+    elif "image_urls" in data.model_fields_set:
+        car.images.clear()
+        car.images.extend(CarImage(url=str(url), sort_order=index) for index, url in enumerate(data.image_urls))
     existing_translations = {item.locale: item for item in car.translations}
     submitted_locales = {item.locale for item in data.translations}
     for locale, translation in existing_translations.items():
@@ -140,6 +150,16 @@ def set_car_publication(car_id: int, published: bool, actor: str = Depends(requi
     car = db.scalar(select(Car).options(selectinload(Car.images), selectinload(Car.translations)).where(Car.id == car_id))
     if car is None:
         raise HTTPException(status_code=404, detail="Car not found")
+    if published:
+        missing = []
+        if len(car.images) < 3 or any(not image.attribution or not image.license_name or not image.source_url or not image.alt for image in car.images):
+            missing.append("three credited photos with license and source metadata")
+        if not car.specification_source:
+            missing.append("a technical specification source")
+        if not car.price_source and not (car.is_demo and car.price_note):
+            missing.append("a verifiable or explicitly DEMO price")
+        if missing:
+            raise HTTPException(status_code=422, detail="Cannot publish vehicle without " + ", ".join(missing))
     car.published = published
     audit(db, actor, "publish" if published else "unpublish", "car", car.id, {"slug": car.slug, "published": published})
     db.commit()

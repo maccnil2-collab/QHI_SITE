@@ -1,0 +1,8 @@
+[build]
+base = "frontend"
+command = "node scripts/validate-netlify-env.mjs && npm run build"
+publish = ".next"
+
+[build.environment]
+NODE_VERSION = "20"
+NEXT_TELEMETRY_DISABLED = "1"

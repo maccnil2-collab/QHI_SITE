@@ -13,10 +13,17 @@ const copy = {
   en: { back:"Back to catalog", loading:"Loading vehicle\u2026", error:"Could not load this vehicle.", description:"Description", specs:"Specifications", year:"Model year", price:"Price in China", category:"Category", engine:"Engine type", volume:"Engine displacement", range:"Range / fuel consumption", battery:"Battery", power:"Power", drive:"Drivetrain", transmission:"Transmission", mileage:"Mileage", color:"Exterior color", equipment:"Equipment", availability:"Catalog status", contact:"Estimate cost", demo:"DEMO \u00b7 illustrative data", image:"Vehicle photo", close:"Close viewer", previous:"Previous photo", next:"Next photo" },
 } satisfies Record<Locale, Record<string, string>>;
 
+const detailCopy = {
+  ru: { fuel:"Топливо", torque:"Крутящий момент", acceleration:"0–100 км/ч", maxSpeed:"Макс. скорость", seats:"Мест", doors:"Дверей", dimensions:"Габариты", advantages:"Преимущества", specSource:"Источник характеристик", photoSource:"Источник фото", priceNote:"Примечание к цене", priceSource:"Источник цены" },
+  tg: { fuel:"Сӯзишворӣ", torque:"Моменти чархонӣ", acceleration:"0–100 км/с", maxSpeed:"Суръати акс.", seats:"Ҷой", doors:"Дар", dimensions:"Андозаҳо", advantages:"Бартариҳо", specSource:"Манбаи хусусиятҳо", photoSource:"Манбаи акс", priceNote:"Эзоҳи нарх", priceSource:"Манбаи нарх" },
+  en: { fuel:"Fuel type", torque:"Torque", acceleration:"0–100 km/h", maxSpeed:"Top speed", seats:"Seats", doors:"Doors", dimensions:"Dimensions", advantages:"Key advantages", specSource:"Specification source", photoSource:"Photo source", priceNote:"Price note", priceSource:"Price source" },
+} satisfies Record<Locale, Record<string, string>>;
+
 const number = (locale: Locale) => new Intl.NumberFormat(locale === "en" ? "en-US" : locale === "tg" ? "tg-TJ" : "ru-RU", { maximumFractionDigits: 0 });
 
 export function VehicleDetail({ locale, slug }: { locale: Locale; slug: string }) {
   const t = copy[locale];
+  const d = detailCopy[locale];
   const [car, setCar] = useState<Car | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [activeImage, setActiveImage] = useState<number | null>(null);
@@ -50,11 +57,14 @@ export function VehicleDetail({ locale, slug }: { locale: Locale; slug: string }
   const dash = "—";
   const facts = [
     [t.year, String(car.year)], [t.category, car.category ?? dash], [t.price, `${money} CNY`],
-    [t.engine, car.engine_type ?? dash], [t.volume, car.engine_cc ? `${number(locale).format(car.engine_cc)} cm³` : dash],
+    [t.engine, car.engine_type ?? dash], [d.fuel, car.fuel_type ?? dash], [t.volume, car.engine_cc ? `${number(locale).format(car.engine_cc)} cm³` : dash],
+    [d.torque, car.torque_nm ? `${number(locale).format(car.torque_nm)} Nm` : dash], [d.acceleration, car.acceleration_0_100_s ? `${car.acceleration_0_100_s} s` : dash],
+    [d.maxSpeed, car.max_speed_kmh ? `${number(locale).format(car.max_speed_kmh)} km/h` : dash], [d.seats, car.seats ? String(car.seats) : dash], [d.doors, car.doors ? String(car.doors) : dash],
     [t.range, car.range_km ? `${number(locale).format(car.range_km)} km` : car.fuel_consumption_l_100km ? `${car.fuel_consumption_l_100km} L/100 km` : dash],
     [t.battery, car.battery_kwh ? `${car.battery_kwh} kWh` : dash], [t.power, car.power_kw ? `${car.power_kw} kW` : dash],
     [t.drive, car.drivetrain ?? dash], [t.transmission, car.transmission ?? dash],
     [t.mileage, car.mileage_km !== null ? `${number(locale).format(car.mileage_km)} km` : dash],
+    [d.dimensions, car.length_mm && car.width_mm && car.height_mm ? `${car.length_mm} × ${car.width_mm} × ${car.height_mm} mm${car.wheelbase_mm ? ` · ${car.wheelbase_mm} mm WB` : ""}` : dash],
     [t.color, car.exterior_color ?? dash], [t.equipment, car.equipment ?? dash], [t.availability, car.availability.replaceAll("_", " ")],
   ];
   const step = (direction: number) => setActiveImage(index => index === null ? 0 : (index + direction + car.images.length) % car.images.length);
@@ -63,16 +73,16 @@ export function VehicleDetail({ locale, slug }: { locale: Locale; slug: string }
     <header className="header"><Link className="logo" href={`/${locale}`} aria-label="QHI AUTO"><b>Q</b> QHI<span>AUTO</span></Link><Link className="contact-top" href={`/${locale}`}>{t.back}</Link></header>
     <section className="vehicle-hero wrap">
       <div className="vehicle-gallery" aria-label={t.image}>
-        {car.images.length > 0 ? car.images.map((image, index) => <button className="vehicle-gallery__item" key={`${image}-${index}`} type="button" onClick={() => setActiveImage(index)} aria-label={`${t.image} ${index + 1}`}><Image src={image} alt={`${title} ${index + 1}`} width={1200} height={900} unoptimized referrerPolicy="no-referrer"/><span>{String(index + 1).padStart(2, "0")} / {String(car.images.length).padStart(2, "0")}</span></button>) : <div className="vehicle-image-placeholder">QHI AUTO / {car.year}</div>}
+        {car.images.length > 0 ? car.images.map((image, index) => <button className="vehicle-gallery__item" key={`${image}-${index}`} type="button" onClick={() => setActiveImage(index)} aria-label={`${t.image} ${index + 1}`}><Image src={image} alt={car.image_details?.[index]?.alt ?? `${title} ${index + 1}`} width={1200} height={900} unoptimized referrerPolicy="no-referrer"/><span>{String(index + 1).padStart(2, "0")} / {String(car.images.length).padStart(2, "0")}</span></button>) : <div className="vehicle-image-placeholder">QHI AUTO / {car.year}</div>}
       </div>
-      <div className="vehicle-summary"><div className="eyebrow dark">{car.brand} · {car.year}</div>{car.is_demo && <span className="demo-label">{t.demo}</span>}<h1>{title}</h1>{car.trim && <p className="vehicle-trim">{car.trim}</p>}<p className="vehicle-price">{money} <small>CNY</small></p><Link className="button" href="#vehicle-contact">{t.contact} ↗</Link></div>
+      <div className="vehicle-summary"><div className="eyebrow dark">{car.brand} · {car.year}</div>{car.is_demo && <span className="demo-label">{t.demo}</span>}<h1>{title}</h1>{car.trim && <p className="vehicle-trim">{car.trim}</p>}<p className="vehicle-price">{money} <small>CNY</small></p>{car.price_usd&&<p className="vehicle-alt-price">{number(locale).format(Number(car.price_usd))} USD</p>}{car.price_tjs&&<p className="vehicle-alt-price">{number(locale).format(Number(car.price_tjs))} TJS</p>}{car.price_note&&<p className="vehicle-price-note">{car.price_note}</p>}<Link className="button" href="#vehicle-contact">{t.contact} ↗</Link></div>
     </section>
     <section className="vehicle-information wrap">
       <div><div className="eyebrow dark">QHI AUTO / 01</div><h2>{t.specs}</h2><dl>{facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>
-      {car.localized_description && <article><div className="eyebrow dark">QHI AUTO / 02</div><h2>{t.description}</h2><p>{car.localized_description}</p></article>}
+      {(car.localized_description || car.advantages || car.specification_source || car.price_source) && <article><div className="eyebrow dark">QHI AUTO / 02</div><h2>{t.description}</h2>{car.localized_description&&<p>{car.localized_description}</p>}{car.advantages&&<p><b>{d.advantages}</b><br/>{car.advantages}</p>}{car.specification_source&&<p>{d.specSource}: <a href={car.specification_source} target="_blank" rel="noreferrer">{car.brand} / {car.model}</a></p>}{car.price_note&&<p>{d.priceNote}: {car.price_note}</p>}{car.price_source&&<p>{d.priceSource}: <a href={car.price_source} target="_blank" rel="noreferrer">{car.brand} / {car.model}</a></p>}</article>}
     </section>
     <section id="vehicle-contact" className="contact wrap"><div><div className="eyebrow dark">QHI AUTO / 03</div><h2>{t.contact}</h2></div><ContactTools locale={locale}/></section>
     <footer><Link className="logo" href={`/${locale}`} aria-label="QHI AUTO"><b>Q</b> QHI<span>AUTO</span></Link></footer>
-    {activeImage !== null && <div className="vehicle-lightbox" role="dialog" aria-modal="true" aria-label={t.image} onClick={() => setActiveImage(null)}><button className="vehicle-lightbox__close" aria-label={t.close} onClick={() => setActiveImage(null)}>×</button><button className="vehicle-lightbox__prev" aria-label={t.previous} onClick={event => { event.stopPropagation(); step(-1); }}>‹</button><Image src={car.images[activeImage]} alt={`${title} ${activeImage + 1}`} width={1800} height={1200} unoptimized referrerPolicy="no-referrer" onClick={event => event.stopPropagation()}/><button className="vehicle-lightbox__next" aria-label={t.next} onClick={event => { event.stopPropagation(); step(1); }}>›</button><span>{String(activeImage + 1).padStart(2, "0")} / {String(car.images.length).padStart(2, "0")}</span></div>}
+    {activeImage !== null && <div className="vehicle-lightbox" role="dialog" aria-modal="true" aria-label={t.image} onClick={() => setActiveImage(null)}><button className="vehicle-lightbox__close" aria-label={t.close} onClick={() => setActiveImage(null)}>×</button><button className="vehicle-lightbox__prev" aria-label={t.previous} onClick={event => { event.stopPropagation(); step(-1); }}>‹</button><Image src={car.images[activeImage]} alt={car.image_details?.[activeImage]?.alt ?? `${title} ${activeImage + 1}`} width={1800} height={1200} unoptimized referrerPolicy="no-referrer" onClick={event => event.stopPropagation()}/>{car.image_details?.[activeImage]?.attribution&&<small className="vehicle-lightbox__credit">{car.image_details[activeImage].attribution} · {car.image_details[activeImage].license_name}{car.image_details[activeImage].source_url&&<> · <a href={car.image_details[activeImage].source_url} target="_blank" rel="noreferrer">{d.photoSource}</a></>}</small>}<button className="vehicle-lightbox__next" aria-label={t.next} onClick={event => { event.stopPropagation(); step(1); }}>›</button><span>{String(activeImage + 1).padStart(2, "0")} / {String(car.images.length).padStart(2, "0")}</span></div>}
   </main>;
 }

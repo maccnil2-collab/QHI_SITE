@@ -19,6 +19,14 @@ class TranslationInput(BaseModel):
     description: str | None = Field(default=None, max_length=10000)
 
 
+class CarImageInput(BaseModel):
+    url: HttpUrl
+    alt: str = Field(min_length=3, max_length=240)
+    attribution: str = Field(min_length=2, max_length=500)
+    license_name: str = Field(min_length=2, max_length=120)
+    source_url: HttpUrl
+
+
 class CarWrite(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -36,6 +44,22 @@ class CarWrite(BaseModel):
     category: CarCategory | None = None
     engine_type: str | None = Field(default=None, max_length=40)
     engine_cc: int | None = Field(default=None, ge=0, le=15000)
+    fuel_type: str | None = Field(default=None, max_length=32)
+    torque_nm: int | None = Field(default=None, ge=0, le=10000)
+    acceleration_0_100_s: Decimal | None = Field(default=None, gt=0, le=100, max_digits=5, decimal_places=2)
+    max_speed_kmh: int | None = Field(default=None, ge=0, le=600)
+    seats: int | None = Field(default=None, ge=1, le=20)
+    doors: int | None = Field(default=None, ge=1, le=8)
+    length_mm: int | None = Field(default=None, ge=1000, le=12000)
+    width_mm: int | None = Field(default=None, ge=1000, le=4000)
+    height_mm: int | None = Field(default=None, ge=1000, le=5000)
+    wheelbase_mm: int | None = Field(default=None, ge=1000, le=8000)
+    advantages: str | None = Field(default=None, max_length=5000)
+    specification_source: HttpUrl | None = None
+    price_usd: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
+    price_tjs: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
+    price_note: str | None = Field(default=None, max_length=500)
+    price_source: HttpUrl | None = None
     transmission: str | None = Field(default=None, max_length=40)
     mileage_km: int | None = Field(default=None, ge=0, le=2000000)
     exterior_color: str | None = Field(default=None, max_length=80)
@@ -45,13 +69,23 @@ class CarWrite(BaseModel):
     availability: Availability = "on_request"
     published: bool = False
     image_urls: list[HttpUrl] = Field(default_factory=list, max_length=20)
+    image_items: list[CarImageInput] = Field(default_factory=list, max_length=20)
     translations: list[TranslationInput] = Field(min_length=3, max_length=3)
 
     @model_validator(mode="after")
     def require_all_locales(self):
+        if self.image_urls and self.image_items:
+            raise ValueError("Use either image_urls or image_items, not both")
         locales = {item.locale for item in self.translations}
         if locales != {"ru", "tg", "en"}:
             raise ValueError("Exactly one translation for each locale (ru, tg, en) is required")
+        if self.published:
+            if len(self.image_items) < 3:
+                raise ValueError("Publishing requires at least three photos with author, license, and source metadata")
+            if self.specification_source is None:
+                raise ValueError("Publishing requires a technical specification source URL")
+            if self.price_source is None and not (self.is_demo and self.price_note):
+                raise ValueError("Publishing requires a price source or an explicitly noted DEMO price")
         return self
 
 

@@ -37,7 +37,7 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
     from app.db.session import SessionLocal
     from app.main import app
     from app.core.rate_limit import SlidingWindowLimiter
-    from app.models import Car, CarTranslation, Customer, PricingTariff
+    from app.models import Car, CarImage, CarTranslation, Customer, PricingTariff
 
     assert SessionLocal is not None
     marker = uuid4().hex[:10]
@@ -48,13 +48,16 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         current_database = db.scalar(text("SELECT current_database()"))
         revision = db.scalar(text("SELECT version_num FROM alembic_version"))
         assert current_database == make_url(_TEST_DATABASE_URL).database
-        assert revision == "0010_shared_rate_limit_buckets"
+        assert revision == "0012_structured_vehicle_specs"
 
         car = Car(
             slug=slug, brand="Integration", model="EV", trim="Test", year=2026,
             price_cny=Decimal("10000.00"), range_km=500, battery_kwh=Decimal("70.00"),
             power_kw=200, drivetrain="AWD", availability="available", published=True,
+            specification_source="https://example.test/specifications",
+            price_source="https://example.test/prices",
         )
+        car.images = [CarImage(url=f"https://example.test/{marker}-{index}.jpg", alt=f"Test vehicle view {index}", attribution="QHI test fixture", license_name="CC0 test fixture", source_url="https://example.test/photo-source", sort_order=index) for index in range(3)]
         car.translations = [
             CarTranslation(locale="ru", title="Test vehicle", description="PostgreSQL check"),
             CarTranslation(locale="tg", title="Мошини санҷишӣ", description="Санҷиши PostgreSQL"),
@@ -173,10 +176,10 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
             key: admin_car[key]
             for key in (
                 "slug", "brand", "model", "trim", "year", "price_cny", "range_km",
-                "battery_kwh", "power_kw", "drivetrain", "availability", "published",
+                "battery_kwh", "power_kw", "drivetrain", "availability", "published", "specification_source", "price_source",
             )
         }
-        update_payload["image_urls"] = admin_car["images"]
+        update_payload["image_items"] = admin_car["image_details"]
         update_payload["translations"] = admin_car["translations"]
         updated_car = client.put(f"/api/v1/admin/cars/{car_id}", json=update_payload, headers=headers)
         assert updated_car.status_code == 200, updated_car.text

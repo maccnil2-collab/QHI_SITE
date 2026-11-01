@@ -45,6 +45,10 @@ def list_cars(
     min_price_cny: Decimal | None = Query(default=None, ge=0),
     max_price_cny: Decimal | None = Query(default=None, ge=0),
     min_range_km: int | None = Query(default=None, ge=0),
+    min_year: int | None = Query(default=None, ge=1886, le=2100),
+    max_year: int | None = Query(default=None, ge=1886, le=2100),
+    engine_type: str | None = Query(default=None, max_length=40),
+    fuel_type: str | None = Query(default=None, max_length=32),
     category: str | None = Query(default=None, max_length=40),
     sort: Literal["price_asc", "price_desc", "year_desc", "range_desc", "name"] = "name",
     include_demo: bool = True,
@@ -64,6 +68,14 @@ def list_cars(
         statement = statement.where(Car.price_cny <= max_price_cny)
     if min_range_km is not None:
         statement = statement.where(Car.range_km >= min_range_km)
+    if min_year is not None:
+        statement = statement.where(Car.year >= min_year)
+    if max_year is not None:
+        statement = statement.where(Car.year <= max_year)
+    if engine_type:
+        statement = statement.where(Car.engine_type.ilike(engine_type.strip()))
+    if fuel_type:
+        statement = statement.where(Car.fuel_type.ilike(fuel_type.strip()))
     if category:
         statement = statement.where(Car.category == category)
     if not include_demo:
@@ -80,6 +92,7 @@ def _car_output(car: Car, locale: str) -> CarOut:
         "localized_title": next((item.title for item in car.translations if item.locale == locale), f"{car.brand} {car.model}"),
         "localized_description": next((item.description for item in car.translations if item.locale == locale), None),
         "images": [image.url for image in car.images],
+        "image_details": [{"url": image.url, "alt": getattr(image, "alt", None), "attribution": getattr(image, "attribution", None), "license_name": getattr(image, "license_name", None), "source_url": getattr(image, "source_url", None)} for image in car.images],
     })
 
 

@@ -150,7 +150,12 @@ def test_catalog_returns_selected_vehicle_translation(monkeypatch):
     car = SimpleNamespace(
         id=7, slug="test-ev", brand="Test", model="EV", trim=None, year=2026,
         price_cny=Decimal("10000"), range_km=500, battery_kwh=Decimal("70"),
-        power_kw=200, drivetrain="AWD", availability="on_request",
+        power_kw=200, drivetrain="AWD", availability="on_request", fuel_type="electric",
+        torque_nm=350, acceleration_0_100_s=Decimal("5.20"), max_speed_kmh=210,
+        seats=5, doors=5, length_mm=4700, width_mm=1900, height_mm=1600,
+        wheelbase_mm=2850, advantages="Efficient drivetrain", specification_source="https://example.invalid/specs",
+        price_usd=Decimal("24000"), price_tjs=Decimal("260000"), price_note="Indicative only",
+        price_source="https://example.invalid/price",
         images=[SimpleNamespace(url="https://example.invalid/vehicle.jpg")],
         translations=[SimpleNamespace(locale="tg", title="\u041c\u043e\u0448\u0438\u043d", description="\u0422\u0430\u0432\u0441\u0438\u0444")],
     )
@@ -163,6 +168,26 @@ def test_catalog_returns_selected_vehicle_translation(monkeypatch):
     assert response.status_code == 200
     assert response.json()[0]["localized_title"] == "\u041c\u043e\u0448\u0438\u043d"
     assert response.json()[0]["localized_description"] == "\u0422\u0430\u0432\u0441\u0438\u0444"
+    assert response.json()[0]["fuel_type"] == "electric"
+    assert response.json()[0]["torque_nm"] == 350
+    assert response.json()[0]["price_usd"] == "24000"
+
+
+def test_catalog_accepts_year_and_powertrain_filters(monkeypatch):
+    car = SimpleNamespace(
+        id=8, slug="filtered-ev", brand="Test", model="Filtered EV", trim=None, year=2025,
+        price_cny=Decimal("10000"), range_km=400, battery_kwh=Decimal("60"), power_kw=150,
+        drivetrain="RWD", availability="on_request", fuel_type="electric", engine_type="BEV",
+        images=[], translations=[],
+    )
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: SimpleNamespace(scalars=lambda _statement: SimpleNamespace(all=lambda: [car])))
+    try:
+        response = client.get("/api/v1/cars?min_year=2024&max_year=2026&engine_type=BEV&fuel_type=electric")
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    assert response.json()[0]["year"] == 2025
+    assert response.json()[0]["fuel_type"] == "electric"
 
 
 def test_vehicle_detail_returns_localized_published_vehicle(monkeypatch):
@@ -345,7 +370,10 @@ def test_admin_car_edit_updates_translations_in_place():
         locale: CarTranslation(locale=locale, title=f"Old {locale}", description=None)
         for locale in ("ru", "tg", "en")
     }
-    car = Car(translations=list(existing.values()))
+    car = Car(
+        translations=list(existing.values()), fuel_type="hybrid", torque_nm=300,
+        specification_source="https://example.invalid/specs", price_source="https://example.invalid/price",
+    )
     data = CarWrite.model_validate({
         "slug": "sample-ev", "brand": "Sample", "model": "EV", "year": 2026,
         "price_cny": "10000", "translations": [
@@ -362,6 +390,10 @@ def test_admin_car_edit_updates_translations_in_place():
     assert {item.locale: item.title for item in car.translations} == {
         "ru": "New RU", "tg": "New TG", "en": "New EN",
     }
+    assert car.fuel_type == "hybrid"
+    assert car.torque_nm == 300
+    assert car.specification_source == "https://example.invalid/specs"
+    assert car.price_source == "https://example.invalid/price"
 
 
 def test_admin_car_write_requires_unique_ru_tg_en_translations():
@@ -381,3 +413,28 @@ def test_admin_car_write_requires_unique_ru_tg_en_translations():
     payload["translations"] = [payload["translations"][0], payload["translations"][0], payload["translations"][2]]
     with pytest.raises(ValidationError, match="Exactly one translation"):
         CarWrite.model_validate(payload)
+
+
+def test_published_car_requires_credited_photos_and_verifiable_sources():
+    import pytest
+    from pydantic import ValidationError
+    from app.schemas.admin import CarWrite
+
+    payload = {
+        "slug": "verified-car", "brand": "Sample", "model": "EV", "year": 2026,
+        "price_cny": "10000", "published": True,
+        "translations": [{"locale": locale, "title": f"Sample {locale}"} for locale in ("ru", "tg", "en")],
+    }
+    with pytest.raises(ValidationError, match="three photos"):
+        CarWrite.model_validate(payload)
+
+    payload.update({
+        "specification_source": "https://example.test/specifications",
+        "price_source": "https://example.test/prices",
+        "image_items": [{
+            "url": f"https://example.test/photo-{index}.jpg",
+            "alt": f"Sample EV view {index}", "attribution": "Test fixture",
+            "license_name": "Test license", "source_url": "https://example.test/source",
+        } for index in range(3)],
+    })
+    assert len(CarWrite.model_validate(payload).image_items) == 3
