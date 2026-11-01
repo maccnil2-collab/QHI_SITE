@@ -5,3 +5,10 @@ export async function fetchCars(filters: URLSearchParams, signal?: AbortSignal):
   if (!response.ok) throw new Error(`Catalog request failed: ${response.status}`);
   return response.json() as Promise<Car[]>;
 }
+
+export async function fetchCar(slug: string, locale: string, signal?: AbortSignal): Promise<Car> {
+  const query = new URLSearchParams({ locale });
+  const response = await fetch(`${apiBase}/cars/${encodeURIComponent(slug)}?${query}`, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(`Vehicle request failed: ${response.status}`);
+  return response.json() as Promise<Car>;
+}

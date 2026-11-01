@@ -153,6 +153,37 @@ def test_catalog_returns_selected_vehicle_translation(monkeypatch):
     assert response.json()[0]["localized_title"] == "\u041c\u043e\u0448\u0438\u043d"
     assert response.json()[0]["localized_description"] == "\u0422\u0430\u0432\u0441\u0438\u0444"
 
+
+def test_vehicle_detail_returns_localized_published_vehicle(monkeypatch):
+    from fastapi import HTTPException
+
+    car = SimpleNamespace(
+        id=7, slug="test-ev", brand="Test", model="EV", trim="Long range", year=2026,
+        price_cny=Decimal("10000"), range_km=500, battery_kwh=Decimal("70"), power_kw=200,
+        drivetrain="AWD", availability="available",
+        images=[SimpleNamespace(url="https://example.invalid/vehicle.jpg")],
+        translations=[SimpleNamespace(locale="tg", title="Мошин", description="Тавсиф")],
+    )
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: SimpleNamespace(scalar=lambda _statement: car))
+    try:
+        response = client.get("/api/v1/cars/test-ev?locale=tg")
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    assert response.json()["localized_title"] == "Мошин"
+    assert response.json()["localized_description"] == "Тавсиф"
+    assert response.json()["images"] == ["https://example.invalid/vehicle.jpg"]
+
+
+def test_vehicle_detail_hides_unknown_or_unpublished_vehicles(monkeypatch):
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: SimpleNamespace(scalar=lambda _statement: None))
+    try:
+        response = client.get("/api/v1/cars/not-published")
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Vehicle not found"}
+
 def test_incomplete_tariff_cannot_be_activated(monkeypatch):
     from datetime import date
     from app.core import admin_auth

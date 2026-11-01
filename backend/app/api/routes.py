@@ -62,7 +62,28 @@ def list_cars(
     if min_range_km is not None:
         statement = statement.where(Car.range_km >= min_range_km)
     cars = db.scalars(statement.order_by(Car.brand, Car.model).limit(limit).offset(offset)).all()
-    return [CarOut.model_validate({**{key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}}, "localized_title": next((item.title for item in car.translations if item.locale == locale), f"{car.brand} {car.model}"), "localized_description": next((item.description for item in car.translations if item.locale == locale), None), "images": [image.url for image in car.images]}) for car in cars]
+    return [_car_output(car, locale) for car in cars]
+
+
+def _car_output(car: Car, locale: str) -> CarOut:
+    return CarOut.model_validate({
+        **{key: getattr(car, key) for key in CarOut.model_fields if key not in {"images", "localized_title", "localized_description"}},
+        "localized_title": next((item.title for item in car.translations if item.locale == locale), f"{car.brand} {car.model}"),
+        "localized_description": next((item.description for item in car.translations if item.locale == locale), None),
+        "images": [image.url for image in car.images],
+    })
+
+
+@router.get("/cars/{slug}", response_model=CarOut)
+def get_car(slug: str, locale: Literal["ru", "tg", "en"] = "ru", db: Session = Depends(get_db)) -> CarOut:
+    car = db.scalar(
+        select(Car)
+        .options(selectinload(Car.images), selectinload(Car.translations))
+        .where(Car.slug == slug, Car.published.is_(True))
+    )
+    if car is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    return _car_output(car, locale)
 
 
 @router.post("/quotes", response_model=QuoteOut)
