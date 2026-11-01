@@ -17,4 +17,5 @@ Catalog (makes, models, trims, specifications, images, availability); Pricing (v
 - Public APIs never expose private CRM notes. Administrative operations require authorization and audit. Customer emails remain unverified until a mail verification flow is configured.
 - Customer notifications are generated from public order events and are owner-scoped; internal staff notes are never included in their response. External notification delivery remains disabled until an approved provider and verification flow are configured.
 - Images use external/object-storage URLs and metadata, not large database blobs.
+- Order documents use private filesystem storage only when an explicit storage path is configured. Files are served as authenticated attachments using opaque random keys; production must provide durable private object storage and malware scanning.
 - Payment, customs, courier, and notification providers sit behind adapters. No real payments or outbound messages are enabled by default.

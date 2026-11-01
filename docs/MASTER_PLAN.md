@@ -9,14 +9,15 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
 - [x] Localized responsive catalog and public cost-quote/enquiry forms (ru/tg/en source); build awaits npm registry access.
 - [ ] Install frontend dependencies from a lockfile, build, and typecheck (npm registry currently returns EACCES).
-- [ ] Apply migrations and run integration tests with private application DB credentials. Current migration head: `0007_customer_notifications`.
+- [ ] Apply migrations and run integration tests after `DATABASE_URL` is configured privately. Current migration head: `0008_order_document_integrity`.
 - [x] Initial API-key-protected admin catalog/tariff management and audit trail.
 - [x] Public itemized tariff-backed quote and rate-limited CRM enquiry API/UI source.
 - [x] Admin surfaces for catalog, tariffs, customer/staff role management; bootstrap-key auth remains transitional.
 - [x] Customer identity, profiles, favorites, and persisted comparisons API; account and catalog controls are wired in source but need a real frontend build.
 - [x] Backend order creation, ownership, status transitions, and event timeline.
 - [x] Staff order/logistics status management and persistent customer in-app notifications linked to public order events; account UI source exists but awaits frontend build.
-- [ ] Secure document upload, storage, and download authorization.
+- [x] Staff document upload and owner/visibility-checked download API, with bounded local storage, type validation, and integrity metadata.
+- [ ] Production object storage, malware scanning, retention, and restore verification for order documents.
 - [x] Backend CRM leads, interactions, manager assignments, and status counts.
 - [x] Localize the initial CRM management UI and provide active manager selection.
 - [ ] Verify CRM in a browser and build sales analytics.
@@ -27,4 +28,4 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 Deliver vertical slices. Run the relevant tests after each change, record only real results in `docs/DEVELOPMENT_STATUS.md`, and commit working checkpoints. Do not invent commercial/legal data. Keep user-owned files outside the Git checkpoint unless required.
 
 ## Current blockers
-npm registry access returns EACCES. PostgreSQL is running but requires a private password. Keep implementation moving on tasks that do not depend on either blocker.
+npm registry access returns EACCES. PostgreSQL service is running, but `DATABASE_URL` and `backend/.env` are absent. Keep implementation moving on tasks that do not depend on these blockers.

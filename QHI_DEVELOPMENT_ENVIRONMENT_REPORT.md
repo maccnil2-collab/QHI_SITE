@@ -44,24 +44,24 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 38 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 44 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
-- Alembic generated offline PostgreSQL SQL through migration head `0007_customer_notifications`.
-- OpenAPI exposes 35 paths, including database readiness, customer session and notification listing/read controls, orders, CRM, and admin routes.
+- Alembic generated offline PostgreSQL SQL through migration head `0008_order_document_integrity`.
+- OpenAPI exposes 39 paths, including database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, CRM, and admin routes.
 - API responses include baseline anti-sniffing, clickjacking, referrer, and permissions-policy headers; readiness returns a generic 503 without leaking database errors.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 40-key schemas and CRM dictionaries matching 61-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 67-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues
 
 - npm registry requests fail with EACCES and the local npm cache has no usable Next.js packages. Therefore Next build, TypeScript typecheck, and Playwright runs have not been performed.
-- PostgreSQL accepts TCP connections, but password authentication was not available without private credentials. No password was guessed, printed, or written. Migrations have only been generated offline, not applied to the running instance.
+- PostgreSQL accepts TCP connections, but `DATABASE_URL` is not configured and no `backend/.env` exists. No password was guessed, printed, or written. Migrations have only been generated offline, not applied to the running instance.
 - RAM and free disk are point-in-time measurements. Figma version was not queried. The Windows registry identity/build combination is recorded verbatim and should be checked in Settings if the exact Windows edition is operationally important.
 - See `reports/ENVIRONMENT_AUDIT.md` and `docs/DEVELOPMENT_STATUS.md` for implementation and security status.
 
 ## Recommended next steps
 
 1. Restore approved npm registry access, install from a lockfile, then run Next build and typecheck before browser tests.
-2. Use the existing private PostgreSQL credentials locally to apply migrations and run database integration tests; keep credentials out of command output and repository files.
+2. Configure `DATABASE_URL` privately, apply migrations through `0008_order_document_integrity`, and run PostgreSQL integration tests; keep credentials out of command output and repository files.
 3. Add Playwright to the locked frontend toolchain and exercise registration, order lifecycle, staff access, CRM, and mobile layouts.
-4. Complete CRM translations, email verification/recovery, secure document storage, production rate limiting, backup/restore drills, and deployment configuration before a public launch.
+4. Complete email verification/recovery, production object storage and malware scanning, production rate limiting, backup/restore drills, and deployment configuration before a public launch.

@@ -2,27 +2,34 @@ from datetime import UTC, datetime
 import secrets
 from functools import lru_cache
 from hashlib import sha256
+from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import delete, select, update
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
+from fastapi.responses import FileResponse
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.auth import AuthContext, get_auth_context, issue_session, require_staff
+from app.core.config import settings
 from app.core.passwords import hash_password, verify_password
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
-from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderEvent, PriceQuote, VehicleOrder
+from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderDocument, OrderEvent, PriceQuote, VehicleOrder
 from app.schemas.auth import AuthResponse, CustomerOut, CustomerSessionOut, LoginRequest, ProfileUpdate, RegisterRequest
 from app.schemas.car import CarOut
 from app.schemas.customer import ComparisonUpdate, FavoriteStatus
 from app.services.orders import transition_order
-from app.schemas.orders import NotificationOut, NotificationReadOut, OrderCreate, OrderOut, OrderStatusChange, StaffOrderOut
+from app.schemas.orders import NotificationOut, NotificationReadOut, OrderCreate, OrderDocumentOut, OrderOut, OrderStatusChange, StaffOrderOut
 from app.schemas.pricing import QuoteOut
+from app.services.documents import DocumentValidationError, MAX_DOCUMENT_SIZE, read_upload, resolve_document, store_document
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 register_limiter = SlidingWindowLimiter(max_requests=5, window_seconds=60)
 login_limiter = SlidingWindowLimiter(max_requests=8, window_seconds=60)
+document_limiter = SlidingWindowLimiter(max_requests=8, window_seconds=60)
+MAX_DOCUMENTS_PER_ORDER = 25
+MAX_DOCUMENT_BYTES_PER_ORDER = 100 * 1024 * 1024
 
 
 @lru_cache(maxsize=1)
@@ -153,6 +160,135 @@ def mark_all_notifications_read(context: AuthContext = Depends(get_auth_context)
     )
     db.commit()
     return NotificationReadOut(updated=result.rowcount or 0)
+
+
+@router.get("/me/orders/{order_id}/documents", response_model=list[OrderDocumentOut])
+def list_my_order_documents(order_id: int, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> list[OrderDocumentOut]:
+    owned_order = db.scalar(select(VehicleOrder.id).where(VehicleOrder.id == order_id, VehicleOrder.customer_id == context.customer.id))
+    if owned_order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    rows = db.scalars(
+        select(OrderDocument)
+        .where(OrderDocument.order_id == order_id, OrderDocument.visible_to_customer.is_(True))
+        .order_by(OrderDocument.created_at.desc())
+    ).all()
+    return [OrderDocumentOut.model_validate(row) for row in rows]
+
+
+@router.get("/me/orders/{order_id}/documents/{document_id}")
+def download_my_order_document(order_id: int, document_id: int, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> Response:
+    row = db.scalar(
+        select(OrderDocument)
+        .join(VehicleOrder, VehicleOrder.id == OrderDocument.order_id)
+        .where(
+            OrderDocument.id == document_id,
+            OrderDocument.order_id == order_id,
+            OrderDocument.visible_to_customer.is_(True),
+            VehicleOrder.customer_id == context.customer.id,
+        )
+    )
+    return _document_response(row)
+
+
+@router.get("/staff/orders/{order_id}/documents", response_model=list[OrderDocumentOut])
+def list_staff_order_documents(order_id: int, context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> list[OrderDocumentOut]:
+    if db.scalar(select(VehicleOrder.id).where(VehicleOrder.id == order_id)) is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    rows = db.scalars(select(OrderDocument).where(OrderDocument.order_id == order_id).order_by(OrderDocument.created_at.desc())).all()
+    return [OrderDocumentOut.model_validate(row) for row in rows]
+
+
+@router.post(
+    "/staff/orders/{order_id}/documents",
+    response_model=OrderDocumentOut,
+    status_code=status.HTTP_201_CREATED,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/pdf": {"schema": {"type": "string", "format": "binary"}},
+                "image/jpeg": {"schema": {"type": "string", "format": "binary"}},
+                "image/png": {"schema": {"type": "string", "format": "binary"}},
+            },
+        }
+    },
+)
+async def upload_staff_order_document(
+    order_id: int,
+    request: Request,
+    visible_to_customer: bool = False,
+    file_name: str = Header(alias="X-File-Name", min_length=1, max_length=4096, description="URL-encoded original filename"),
+    context: AuthContext = Depends(require_staff),
+    db: Session = Depends(get_db),
+) -> OrderDocumentOut:
+    storage_root = settings.document_storage_path
+    if storage_root is None or not storage_root.is_absolute():
+        raise HTTPException(status_code=503, detail="Document storage is not configured")
+    document_limiter.check(f"documents:{context.customer.id}")
+    order = db.scalar(select(VehicleOrder).where(VehicleOrder.id == order_id).with_for_update())
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    count, total_size = db.execute(
+        select(func.count(OrderDocument.id), func.coalesce(func.sum(OrderDocument.byte_size), 0)).where(OrderDocument.order_id == order_id)
+    ).one()
+    if count >= MAX_DOCUMENTS_PER_ORDER or total_size >= MAX_DOCUMENT_BYTES_PER_ORDER:
+        raise HTTPException(status_code=409, detail="Order document storage limit reached")
+    try:
+        content = await read_upload(request.stream(), MAX_DOCUMENT_SIZE)
+        canonical_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+        key, safe_name, checksum, byte_size = store_document(storage_root, order_id, unquote(file_name), canonical_type, content)
+    except DocumentValidationError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    if total_size + byte_size > MAX_DOCUMENT_BYTES_PER_ORDER:
+        resolve_document(storage_root, key).unlink(missing_ok=True)
+        raise HTTPException(status_code=409, detail="Order document storage limit reached")
+    row = OrderDocument(
+        order_id=order_id,
+        uploaded_by_id=context.customer.id,
+        storage_key=key,
+        filename=safe_name,
+        content_type=canonical_type,
+        byte_size=byte_size,
+        sha256=checksum,
+        visible_to_customer=visible_to_customer,
+    )
+    db.add(row)
+    try:
+        db.commit()
+        db.refresh(row)
+    except Exception:
+        db.rollback()
+        resolve_document(storage_root, key).unlink(missing_ok=True)
+        raise
+    return OrderDocumentOut.model_validate(row)
+
+
+@router.get("/staff/orders/{order_id}/documents/{document_id}")
+def download_staff_order_document(order_id: int, document_id: int, context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> Response:
+    row = db.scalar(
+        select(OrderDocument).where(OrderDocument.id == document_id, OrderDocument.order_id == order_id)
+    )
+    return _document_response(row)
+
+
+def _document_response(row: OrderDocument | None) -> Response:
+    if row is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    storage_root = settings.document_storage_path
+    if storage_root is None or not storage_root.is_absolute():
+        raise HTTPException(status_code=503, detail="Document storage is not configured")
+    try:
+        file_path = resolve_document(storage_root, row.storage_key)
+    except DocumentValidationError:
+        raise HTTPException(status_code=404, detail="Document not found") from None
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Document not found")
+    return FileResponse(
+        file_path,
+        media_type=row.content_type,
+        filename=row.filename,
+        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+    )
 
 
 @router.get("/me/sessions", response_model=list[CustomerSessionOut])

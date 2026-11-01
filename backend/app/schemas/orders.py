@@ -82,3 +82,14 @@ class NotificationOut(BaseModel):
 
 class NotificationReadOut(BaseModel):
     updated: int
+
+
+class OrderDocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    filename: str
+    content_type: str
+    byte_size: int | None
+    visible_to_customer: bool
+    created_at: datetime

@@ -45,5 +45,7 @@ class OrderDocument(Base):
     storage_key: Mapped[str] = mapped_column(String(500), unique=True)
     filename: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(120))
+    byte_size: Mapped[int | None] = mapped_column(nullable=True)
+    sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
     visible_to_customer: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

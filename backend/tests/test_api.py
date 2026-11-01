@@ -30,6 +30,13 @@ def test_readiness_contract_documents_unavailable_database_response():
     assert "503" in operation["responses"]
 
 
+def test_document_upload_openapi_describes_raw_supported_file_types():
+    operation = client.get("/openapi.json").json()["paths"]["/api/v1/auth/staff/orders/{order_id}/documents"]["post"]
+    content = operation["requestBody"]["content"]
+    assert set(content) == {"application/pdf", "image/jpeg", "image/png"}
+    assert any(parameter["name"] == "X-File-Name" for parameter in operation["parameters"])
+
+
 def test_readiness_checks_database_connection_without_exposing_connection_errors(monkeypatch):
     from app.api import routes
     from contextlib import contextmanager
@@ -99,11 +106,12 @@ def test_cors_allows_admin_header_from_local_frontend():
         headers={
             "Origin": "http://localhost:3000",
             "Access-Control-Request-Method": "GET",
-            "Access-Control-Request-Headers": "x-admin-token,content-type",
+            "Access-Control-Request-Headers": "x-admin-token,content-type,x-file-name",
         },
     )
     assert response.status_code == 200
     assert "x-admin-token" in response.headers["access-control-allow-headers"].lower()
+    assert "x-file-name" in response.headers["access-control-allow-headers"].lower()
 
 
 def test_catalog_returns_selected_vehicle_translation(monkeypatch):
@@ -148,6 +156,19 @@ def test_order_and_staff_crm_routes_require_login_before_database_access():
     for path in ("/api/v1/auth/me/notifications/read-all", "/api/v1/auth/me/notifications/7/read"):
         response = client.post(path)
         assert response.status_code == 401
+
+
+def test_order_document_routes_require_authentication():
+    for path in (
+        "/api/v1/auth/me/orders/7/documents",
+        "/api/v1/auth/me/orders/7/documents/3",
+        "/api/v1/auth/staff/orders/7/documents",
+        "/api/v1/auth/staff/orders/7/documents/3",
+    ):
+        response = client.get(path)
+        assert response.status_code == 401
+    response = client.post("/api/v1/auth/staff/orders/7/documents", headers={"X-File-Name": "invoice.pdf"}, content=b"%PDF-1.7")
+    assert response.status_code == 401
 
 
 def test_quote_endpoint_reports_unavailable_without_current_tariff(monkeypatch):
