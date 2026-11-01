@@ -17,7 +17,8 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Backend order creation, ownership, status transitions, and event timeline.
 - [ ] Order administration UI, secure document storage, and notifications; customer order request screen source exists but is unbuilt.
 - [x] Backend CRM leads, interactions, manager assignments, and status counts.
-- [ ] Localize and verify the initial CRM management UI, improve manager selection and sales analytics.
+- [x] Localize the initial CRM management UI and provide active manager selection.
+- [ ] Verify CRM in a browser and build sales analytics.
 - [ ] Complete localization, accessibility, performance, and security checks.
 - [ ] Deployment, backup/restore, monitoring, and operations guide.
 
