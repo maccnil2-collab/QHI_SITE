@@ -29,7 +29,11 @@ def test_browser_csrf_header_is_allowed_and_token_header_is_exposed():
     assert response.headers["access-control-expose-headers"] == "X-CSRF-Token"
 
 
-def test_health_is_available_without_database_credentials():
+def test_health_is_available_without_database_credentials(monkeypatch):
+    from app.api import routes
+    from app.core.config import Settings
+
+    monkeypatch.setattr(routes, "settings", Settings(database_url=None, cors_origins=[], admin_api_key=None))
     response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "not_configured"}
@@ -101,12 +105,19 @@ def test_security_headers_are_added_to_api_responses():
     assert response.headers["x-frame-options"] == "DENY"
     assert response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
 
-def test_catalog_fails_closed_when_database_is_unconfigured():
+def test_catalog_fails_closed_when_database_is_unconfigured(monkeypatch):
+    from app.db import session
+
+    monkeypatch.setattr(session, "SessionLocal", None)
     response = client.get("/api/v1/cars")
     assert response.status_code == 503
     assert response.json()["detail"] == "Database is not configured"
 
-def test_admin_routes_fail_closed_until_private_key_is_configured():
+def test_admin_routes_fail_closed_until_private_key_is_configured(monkeypatch):
+    from app.core import admin_auth
+    from app.core.config import Settings
+
+    monkeypatch.setattr(admin_auth, "settings", Settings(database_url=None, cors_origins=[], admin_api_key=None))
     response = client.get("/api/v1/admin/cars")
     assert response.status_code == 503
     assert response.json()["detail"] == "Administrative access is not configured"

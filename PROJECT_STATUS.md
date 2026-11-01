@@ -20,7 +20,7 @@ Updated: 2026-11-01
 
 ## Verified in this takeover
 
-- Backend tests: **53 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning), with `PYTHON_DOTENV_DISABLED=true` to keep unit tests independent of ignored local credentials. The separately invoked PostgreSQL workflow passed (**1 passed**).
+- Backend tests: **53 passed, 1 opt-in PostgreSQL test skipped** (one dependency deprecation warning); no-database tests now explicitly isolate configuration and pass with local `.env` present. The separately invoked PostgreSQL workflow passed (**1 passed**).
 - Python compileall: **PASS**.
 - TypeScript/TSX syntax transpilation: **PASS (22 files)** using the VS Code-bundled compiler; this is syntax-only, not a semantic typecheck.
 - Isolated TypeScript semantic check for RU/TG/EN message dictionaries: **PASS**. Full-app semantic checking through the bundled compiler remains blocked by absent React/Next/Node/Playwright declarations; after fixes, the remaining diagnostics were dependency/type-resolution errors.

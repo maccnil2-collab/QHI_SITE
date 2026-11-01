@@ -61,7 +61,6 @@ These API checks do not establish frontend/browser integration.
 With the isolated PostgreSQL server running:
 
 ```powershell
-$env:PYTHON_DOTENV_DISABLED = 'true'
 .\.venv\Scripts\python.exe -m pytest -q
 
 $env:DATABASE_URL = 'postgresql+psycopg://postgres@127.0.0.1:55439/qhi_auto_test'
@@ -72,7 +71,7 @@ $env:QHI_TEST_DATABASE_URL = $env:DATABASE_URL
 .\.venv\Scripts\python.exe -m pytest backend\tests\test_postgres_workflows.py -q
 ```
 
-Latest isolated backend verification: **53 passed, 1 opt-in test skipped**, `compileall` and `pip check` passed; the PostgreSQL workflow passed (**1 passed**) and `alembic check` found no schema drift. The local `.env` is intentionally disabled for the unit suite because those tests assert behavior with no DB/admin credentials; the separate PostgreSQL workflow explicitly supplies its disposable test DSN.
+Latest isolated backend verification: **53 passed, 1 opt-in test skipped**, `compileall` and `pip check` passed; the PostgreSQL workflow passed (**1 passed**) and `alembic check` found no schema drift. The unit tests explicitly monkeypatch no-database/no-admin settings, so they remain valid with a local `.env`; the PostgreSQL workflow explicitly supplies its disposable test DSN.
 
 After npm dependencies are installed, run Playwright from `frontend/` with `QHI_TEST_DATABASE_URL` set to the same loopback `*_test` DSN. Its config starts API/web dev servers on loopback ports 18000/13000 and refuses other database hosts/names.
 
