@@ -2,7 +2,7 @@
 
 ## Current state
 
-Payment processing is disabled. No checkout URL can be created, no payment can be approved, and no card data is collected by the application. `app.services.payment_providers` defines the provider-neutral create-session, webhook-verification, and refund interface; `DemoProviderDisabled` refuses all financial operations. The additive migration reserves a payment-attempt schema for future provider references and idempotency keys. It is not yet applied in the local PostgreSQL database.
+Payment processing is disabled. No checkout URL can be created, no payment can be approved, and no card data is collected by the application. `app.services.payment_providers` defines the provider-neutral create-session, webhook-verification, and refund interface; `DemoProviderDisabled` refuses all financial operations. The payment-attempt schema and idempotency constraint are present in the current local databases after migration `0011_demo_inventory_support_payments`; this is only storage groundwork and does not enable a payment flow.
 
 This is an integration boundary, not a completed provider integration. There is no Visa, Mastercard, PayPal, Stripe, regional gateway, webhook endpoint, payment history screen, or refund workflow enabled.
 
