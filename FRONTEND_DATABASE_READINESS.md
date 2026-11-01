@@ -8,15 +8,16 @@ Current code checkpoint: `92f9ea4` (`Pin frontend package manager toolchain`)
 - Portable Node.js 26.13.0 and npm 11.20.0 use the official `https://registry.npmjs.org/`; `strict-ssl` is enabled.
 - npm user config is `C:\Users\Asus Notebook\.npmrc`. No user, repository, or portable config file overrides registry or proxy settings. npm `proxy` and `https-proxy` are unset; no HTTP proxy environment variables are present.
 - The current user has Modify access to npm cache, but `next` and `typescript` packages are not cached.
-- Earlier checks from the Codex execution shell failed with system `EACCES`, and a subsequent HTTPS probe failed to connect. In the current Codex shell, `node` and `npm` are not in PATH or the standard install locations checked; Docker is also unavailable.
-- The project owner subsequently reported `node -v` = `v26.13.0`, `npm -v` = `11.20.0`, and `npm ping` = `PONG` in their interactive terminal. This confirms registry access there, but those executables are not visible to the current Codex process, so installation and lockfile generation are still unverified from the project worktree. The owner was asked for the executable paths so the same checks can run here.
+- The owner provided portable runtime path `tools/nodejs`; from the Codex shell, `node -v` returns `v26.13.0` and `npm.cmd -v` returns `11.20.0`. PowerShell's `npm.ps1` shim is blocked by execution policy, so use `npm.cmd` or `cmd.exe`.
+- From the same Codex shell, npm resolves the official registry, `strict-ssl=true`, and has no npm/WinHTTP proxy. `npm ping` still fails with system `EACCES`; the owner reports `PONG` from their interactive terminal, so egress differs between the interactive and Codex execution environments.
+- `npm cache ls` is empty. `npm install --package-lock-only --ignore-scripts --no-audit --no-fund` was attempted, remained stalled with no visible TCP connection, and was stopped. No lockfile or `node_modules` was created.
 - No registry/proxy config was changed. `frontend/package-lock.json` and `node_modules` remain absent; a lockfile was not fabricated.
 
 ## Frontend checks
 
 | Check | Result |
 |---|---|
-| npm install / lockfile | BLOCKED in Codex shell: Node/npm executable path unavailable; owner reports registry `PONG` from interactive terminal |
+| npm install / lockfile | BLOCKED in Codex shell: registry request fails with `EACCES`; owner reports `PONG` from interactive terminal |
 | Dependency compatibility resolution | NOT TESTED |
 | TypeScript semantic typecheck | BLOCKED: frontend dependencies/types are absent. Bundled compiler reports only unresolved dependency/type declarations after fixing project-local diagnostics; isolated locale dictionaries typecheck successfully. |
 | TypeScript/TSX syntax transpile | PASS: 22 files via the TypeScript compiler bundled with VS Code (syntax only) |
@@ -80,7 +81,7 @@ After npm dependencies are installed, run Playwright from `frontend/` with `QHI_
 
 ## Remaining gates
 
-1. Pass the interactive terminal's Node/npm executable paths into the Codex execution environment, then generate/review the lockfile and use `npm ci`.
+1. Allow npm registry egress from the Codex execution environment (or run the install from the owner's connected terminal in this worktree), then generate/review the lockfile and use `npm ci`.
 2. Resolve package peers, run typecheck, lint, Next build, and Playwright; fix failures based on actual output.
 3. Run browser scenarios against the isolated database and record actual results.
 4. Keep production deployment blocked on Docker/staging, TLS/reverse proxy, durable scanned document storage, encrypted/retained production backup policy, monitoring, email verification/recovery, and key rotation.
