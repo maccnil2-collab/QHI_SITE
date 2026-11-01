@@ -19,7 +19,7 @@ class CRMLead(Base):
     source: Mapped[str] = mapped_column(String(40), default="website")
     status: Mapped[str] = mapped_column(String(24), default="new", index=True)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     interactions: Mapped[list["CRMInteraction"]] = relationship(back_populates="lead", cascade="all, delete-orphan", order_by="CRMInteraction.created_at")
     customer: Mapped["Customer | None"] = relationship(foreign_keys=[customer_id])

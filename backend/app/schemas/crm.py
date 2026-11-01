@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -96,6 +97,29 @@ class InteractionOut(BaseModel):
 class CRMOverview(BaseModel):
     leads_by_status: dict[str, int]
     orders_by_status: dict[str, int]
+
+
+class CRMManagerWorkload(BaseModel):
+    manager_id: int
+    manager_name: str
+    assigned_leads: int
+    active_leads: int
+
+
+class CRMAnalytics(BaseModel):
+    from_date: date
+    to_date: date
+    leads_created: int
+    leads_by_status: dict[str, int]
+    leads_by_source: dict[str, int]
+    converted_leads: int = Field(description="Leads from the selected creation-date cohort currently in converted status")
+    conversion_rate_percent: Decimal = Field(description="Current converted share of leads created in the selected period")
+    unassigned_leads: int
+    manager_workload: list[CRMManagerWorkload]
+    orders_created: int
+    orders_by_status: dict[str, int] = Field(description="Current status of orders created during the selected period")
+    quotes_created: int
+    quoted_total_tjs: Decimal = Field(description="Sum of immutable cost estimates in TJS; not realized revenue")
 
 
 class ManagerOut(BaseModel):

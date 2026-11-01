@@ -9,7 +9,7 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [x] Initial API, catalog/pricing models, migration, and tariff-safe calculator.
 - [x] Localized responsive catalog and public cost-quote/enquiry forms (ru/tg/en source); build awaits npm registry access.
 - [ ] Install frontend dependencies from a lockfile, build, and typecheck (npm registry currently returns EACCES).
-- [ ] Apply migrations and run integration tests after `DATABASE_URL` is configured privately. Current migration head: `0008_order_document_integrity`.
+- [ ] Apply migrations and run integration tests after `DATABASE_URL` is configured privately. Current migration head: `0009_crm_analytics_indexes`.
 - [x] Initial API-key-protected admin catalog/tariff management and audit trail.
 - [x] Public itemized tariff-backed quote and rate-limited CRM enquiry API/UI source.
 - [x] Admin surfaces for catalog, tariffs, customer/staff role management; bootstrap-key auth remains transitional.
@@ -20,7 +20,8 @@ Deliver an extensible commercial platform for electric vehicles sourced in China
 - [ ] Production object storage, malware scanning, retention, and restore verification for order documents.
 - [x] Backend CRM leads, interactions, manager assignments, and status counts.
 - [x] Localize the initial CRM management UI and provide active manager selection.
-- [ ] Verify CRM in a browser and build sales analytics.
+- [x] Add staff-only date-bounded CRM analytics for lead cohort conversion, sources, manager workload, order statuses, and quote estimates.
+- [ ] Verify CRM analytics in a browser and add event-time attribution where business definitions require conversion-date reporting.
 - [ ] Complete localization, accessibility, performance, and security checks.
 - [ ] Deployment, backup/restore, monitoring, and operations guide.
 

@@ -18,4 +18,5 @@ Catalog (makes, models, trims, specifications, images, availability); Pricing (v
 - Customer notifications are generated from public order events and are owner-scoped; internal staff notes are never included in their response. External notification delivery remains disabled until an approved provider and verification flow are configured.
 - Images use external/object-storage URLs and metadata, not large database blobs.
 - Order documents use private filesystem storage only when an explicit storage path is configured. Files are served as authenticated attachments using opaque random keys; production must provide durable private object storage and malware scanning.
+- CRM analytics use bounded UTC creation-date cohorts and indexed date filters. Conversion is the cohort's current lead status, and summed quote values are estimates rather than realized revenue.
 - Payment, customs, courier, and notification providers sit behind adapters. No real payments or outbound messages are enabled by default.

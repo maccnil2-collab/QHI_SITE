@@ -149,7 +149,7 @@ def test_incomplete_tariff_cannot_be_activated(monkeypatch):
     assert response.json()["detail"].startswith("Cannot activate incomplete tariff")
 
 def test_order_and_staff_crm_routes_require_login_before_database_access():
-    for path in ("/api/v1/auth/me/orders", "/api/v1/auth/me/sessions", "/api/v1/auth/me/notifications", "/api/v1/auth/staff/orders", "/api/v1/crm/overview", "/api/v1/crm/managers"):
+    for path in ("/api/v1/auth/me/orders", "/api/v1/auth/me/sessions", "/api/v1/auth/me/notifications", "/api/v1/auth/staff/orders", "/api/v1/crm/overview", "/api/v1/crm/analytics", "/api/v1/crm/managers"):
         response = client.get(path)
         assert response.status_code == 401
         assert response.headers["www-authenticate"] == "Bearer"

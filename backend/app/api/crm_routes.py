@@ -1,12 +1,15 @@
+from datetime import UTC, date, datetime, time, timedelta
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.core.auth import AuthContext, get_optional_customer, require_staff
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
-from app.models import CRMInteraction, CRMLead, Customer, VehicleOrder
-from app.schemas.crm import CRMOverview, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadReceipt, LeadStatus, LeadUpdate, ManagerOut
+from app.models import CRMInteraction, CRMLead, Customer, PriceQuote, VehicleOrder
+from app.schemas.crm import CRMAnalytics, CRMManagerWorkload, CRMOverview, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadReceipt, LeadStatus, LeadUpdate, ManagerOut
 from app.services.crm import transition_lead
 
 router = APIRouter(tags=["crm"])
@@ -112,3 +115,76 @@ def crm_overview(context: AuthContext = Depends(require_staff), db: Session = De
     leads = db.execute(select(CRMLead.status, func.count(CRMLead.id)).group_by(CRMLead.status)).all()
     orders = db.execute(select(VehicleOrder.status, func.count(VehicleOrder.id)).group_by(VehicleOrder.status)).all()
     return CRMOverview(leads_by_status={key: count for key, count in leads}, orders_by_status={key: count for key, count in orders})
+
+
+@router.get("/crm/analytics", response_model=CRMAnalytics)
+def crm_analytics(
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    context: AuthContext = Depends(require_staff),
+    db: Session = Depends(get_db),
+) -> CRMAnalytics:
+    today = datetime.now(UTC).date()
+    period_end = to_date or today
+    if to_date is not None and to_date > today:
+        raise HTTPException(status_code=422, detail="to_date cannot be in the future")
+    if from_date is None and period_end < date.min + timedelta(days=29):
+        raise HTTPException(status_code=422, detail="Date is too early for the default analytics period")
+    period_start = from_date or period_end - timedelta(days=29)
+    if period_start > period_end:
+        raise HTTPException(status_code=422, detail="from_date must not be later than to_date")
+    if (period_end - period_start).days > 365:
+        raise HTTPException(status_code=422, detail="Analytics period cannot exceed 366 calendar days")
+    period_start_at = datetime.combine(period_start, time.min, tzinfo=UTC)
+    period_end_at = datetime.combine(period_end + timedelta(days=1), time.min, tzinfo=UTC)
+    lead_period = (CRMLead.created_at >= period_start_at, CRMLead.created_at < period_end_at)
+    order_period = (VehicleOrder.created_at >= period_start_at, VehicleOrder.created_at < period_end_at)
+    quote_period = (PriceQuote.created_at >= period_start_at, PriceQuote.created_at < period_end_at)
+
+    lead_status_rows = db.execute(select(CRMLead.status, func.count(CRMLead.id)).where(*lead_period).group_by(CRMLead.status)).all()
+    lead_source_rows = db.execute(select(CRMLead.source, func.count(CRMLead.id)).where(*lead_period).group_by(CRMLead.source)).all()
+    leads_by_status = {key: count for key, count in lead_status_rows}
+    leads_created = sum(leads_by_status.values())
+    converted_leads = leads_by_status.get("converted", 0)
+    conversion_rate = (Decimal(converted_leads * 100) / Decimal(leads_created)).quantize(Decimal("0.01")) if leads_created else Decimal("0.00")
+
+    manager_rows = db.execute(
+        select(
+            Customer.id,
+            Customer.full_name,
+            func.count(CRMLead.id),
+            func.coalesce(func.sum(case((CRMLead.status.notin_(("converted", "lost")), 1), else_=0)), 0),
+        )
+        .join(CRMLead, CRMLead.assigned_manager_id == Customer.id)
+        .where(Customer.is_active.is_(True), Customer.role.in_(("manager", "admin")), *lead_period)
+        .group_by(Customer.id, Customer.full_name)
+        .order_by(Customer.full_name, Customer.id)
+    ).all()
+    manager_workload = [
+        CRMManagerWorkload(manager_id=manager_id, manager_name=name, assigned_leads=assigned, active_leads=active)
+        for manager_id, name, assigned, active in manager_rows
+    ]
+    assigned_to_active_staff = sum(item.assigned_leads for item in manager_workload)
+
+    order_status_rows = db.execute(select(VehicleOrder.status, func.count(VehicleOrder.id)).where(*order_period).group_by(VehicleOrder.status)).all()
+    orders_by_status = {key: count for key, count in order_status_rows}
+    orders_created = sum(orders_by_status.values())
+    quote_count, quoted_total = db.execute(
+        select(func.count(PriceQuote.id), func.coalesce(func.sum(PriceQuote.total_tjs), 0)).where(*quote_period)
+    ).one()
+
+    return CRMAnalytics(
+        from_date=period_start,
+        to_date=period_end,
+        leads_created=leads_created,
+        leads_by_status=leads_by_status,
+        leads_by_source={key: count for key, count in lead_source_rows},
+        converted_leads=converted_leads,
+        conversion_rate_percent=conversion_rate,
+        unassigned_leads=max(0, leads_created - assigned_to_active_staff),
+        manager_workload=manager_workload,
+        orders_created=orders_created,
+        orders_by_status=orders_by_status,
+        quotes_created=quote_count,
+        quoted_total_tjs=quoted_total,
+    )

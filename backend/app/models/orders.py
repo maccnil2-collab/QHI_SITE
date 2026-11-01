@@ -15,7 +15,7 @@ class VehicleOrder(Base):
     car_id: Mapped[int] = mapped_column(ForeignKey("cars.id", ondelete="RESTRICT"), index=True)
     status: Mapped[str] = mapped_column(String(32), default="requested", index=True)
     customer_note: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     car: Mapped["Car"] = relationship()
     customer: Mapped["Customer"] = relationship()

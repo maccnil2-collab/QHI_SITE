@@ -44,12 +44,12 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 44 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 46 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
-- Alembic generated offline PostgreSQL SQL through migration head `0008_order_document_integrity`.
-- OpenAPI exposes 39 paths, including database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, CRM, and admin routes.
+- Alembic generated offline PostgreSQL SQL through migration head `0009_crm_analytics_indexes`.
+- OpenAPI exposes 40 paths, including date-bounded CRM analytics, database readiness, customer session/notification controls, staff document upload and owner/visibility-scoped downloads, orders, and admin routes.
 - API responses include baseline anti-sniffing, clickjacking, referrer, and permissions-policy headers; readiness returns a generic 503 without leaking database errors.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 67-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 44-key schemas and CRM dictionaries matching 85-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues
@@ -62,6 +62,6 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 ## Recommended next steps
 
 1. Restore approved npm registry access, install from a lockfile, then run Next build and typecheck before browser tests.
-2. Configure `DATABASE_URL` privately, apply migrations through `0008_order_document_integrity`, and run PostgreSQL integration tests; keep credentials out of command output and repository files.
+2. Configure `DATABASE_URL` privately, apply migrations through `0009_crm_analytics_indexes`, and run PostgreSQL integration tests; keep credentials out of command output and repository files.
 3. Add Playwright to the locked frontend toolchain and exercise registration, order lifecycle, staff access, CRM, and mobile layouts.
 4. Complete email verification/recovery, production object storage and malware scanning, production rate limiting, backup/restore drills, and deployment configuration before a public launch.
