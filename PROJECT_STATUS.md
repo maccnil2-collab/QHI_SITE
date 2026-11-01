@@ -37,7 +37,7 @@ Updated: 2026-11-01
 - Isolated database readiness and integration evidence are maintained in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md); PostgreSQL tests are explicitly opt-in and require a loopback database with a `*_test` name.
 - Local API startup from ignored `backend/.env`: **PASS**; uvicorn is running on `127.0.0.1:8000`, readiness reports the test DB connected.
 - Root-level pytest invocation: **PASS** from repository root.
-- Frontend npm installation: **BLOCKED**; registry DNS resolves but HTTPS connect fails, and Node/npm are unavailable in the current shell.
+- Frontend npm installation: **NOT RUN in the Codex shell** because Node/npm are not on its PATH. The owner reports Node 26.13.0, npm 11.20.0, and registry `PONG` in their terminal; dependency installation remains unverified in the worktree.
 
 ## Not verified
 
