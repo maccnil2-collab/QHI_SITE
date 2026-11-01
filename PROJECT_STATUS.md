@@ -5,7 +5,7 @@ Updated: 2026-11-01
 ## Current checkpoint
 
 - Git branch: `main`
-- Latest code checkpoint: `0b88f19` (`Enforce shared PostgreSQL API rate limits`)
+- Latest code checkpoint: `6e87a99` (`Verify concurrent PostgreSQL rate limiting`)
 - Existing user file: untracked root `test.txt`; preserve unchanged.
 
 ## Working and implemented
