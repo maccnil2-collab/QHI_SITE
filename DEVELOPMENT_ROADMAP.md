@@ -2,18 +2,24 @@
 
 Priorities are ordered by dependency and risk. Do not publish legal, tariff, inventory, or delivery claims without owner-provided values.
 
-## 1. Establish reproducible frontend verification
+## Progress at checkpoint `ec0d0c2`
+
+- Completed: isolated PostgreSQL test cluster; all nine migrations applied; schema/model comparison clean; one opt-in real PostgreSQL API workflow test passes.
+- Completed: localized vehicle detail route, catalog navigation, and authenticated quote persistence; ESLint and desktop/mobile Playwright source configuration added.
+- Blocked: npm registry socket access (`EACCES` before HTTP), so lockfile, installed toolchain, semantic typecheck, lint, Next build, and browser execution remain outstanding.
+
+## 1. Establish reproducible frontend verification — in progress
 
 - Restore approved npm registry access.
 - Resolve and review the Next/React/tooling dependency graph, generate `package-lock.json`, and use `npm ci` thereafter.
 - Run TypeScript semantic checking and production build; fix all compiler/build failures.
-- Add a lint script/toolchain and Playwright E2E coverage for authentication, catalog, quotes, account/orders, CRM/admin authorization, and responsive layouts.
+- Run the configured lint and Playwright coverage for authentication, catalog, quotes, account/orders, CRM/admin authorization, and responsive layouts.
 
-## 2. Verify persistence against PostgreSQL
+## 2. Verify persistence against PostgreSQL — basic workflows verified
 
 - Configure a private disposable test database without committing credentials.
-- Apply all migrations through `0009_crm_analytics_indexes`; verify schema constraints, indexes, and expected revision state.
-- Run API integration and concurrency/transaction tests for sessions, quote snapshots, order transitions, CRM ownership, and document metadata.
+- Applied all migrations through `0009_crm_analytics_indexes` on an isolated fresh database; `alembic check` reports no schema drift.
+- One API integration workflow covers sessions, quotes, orders, CRM, and admin. Add targeted concurrency/transaction tests for order transitions, document metadata, and ownership.
 - Establish backup/restore and forward-repair procedures before production data.
 
 ## 3. Close identity and security gaps

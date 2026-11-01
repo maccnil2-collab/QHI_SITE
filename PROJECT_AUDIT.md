@@ -41,3 +41,11 @@ Branch and base checkpoint: `main`, `666ff552d5bd6fb0545ceaf3fcd33ef06e4f9169` (
 8. User-owned inventory, images, exchange rates, and legal tariff values are intentionally not invented.
 
 After the intake audit, added a root `pytest.ini` so the suite can be collected from the repository root without manually changing Python paths. Re-running pytest from the root after this change produced **50 passed** (same deprecation warning).
+
+## Follow-up mission from `3333374`
+
+- Added a localized public vehicle detail API and frontend route. Catalog vehicle titles now link to the detail page.
+- Fixed a browser/API mismatch in quote submission: signed-in quote requests now go through the cookie/CSRF-aware API client and can be attached to the current customer's quote history.
+- Added opt-in PostgreSQL workflow coverage. On a separate loopback-only PostgreSQL 18.6 cluster, migrations 0001–0009 applied successfully, `alembic check` found no drift, and the integration workflow passed for auth/session/CSRF, catalog, quote history, account saved vehicles, orders, CRM, and admin access.
+- Added ESLint and Playwright scripts/configuration and desktop/mobile workflow specs. npm registry access still fails at the socket layer with `EACCES`; lockfile generation, dependency resolution, typecheck, lint, Next build, and browser execution remain unverified.
+- Current checkpoint is `ec0d0c2`. The detailed evidence and test database instructions are in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md).
