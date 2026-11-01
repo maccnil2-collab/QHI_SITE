@@ -6,7 +6,7 @@ from app.core.auth import AuthContext, get_optional_customer, require_staff
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
 from app.models import CRMInteraction, CRMLead, Customer, VehicleOrder
-from app.schemas.crm import CRMOverview, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadReceipt, LeadStatus, LeadUpdate
+from app.schemas.crm import CRMOverview, InteractionCreate, InteractionOut, LeadCreate, LeadOut, LeadReceipt, LeadStatus, LeadUpdate, ManagerOut
 from app.services.crm import transition_lead
 
 router = APIRouter(tags=["crm"])
@@ -52,6 +52,16 @@ def list_leads(
         statement = statement.where(CRMLead.assigned_manager_id == manager_id)
     leads = db.scalars(statement.order_by(CRMLead.created_at.desc()).limit(limit).offset(offset)).all()
     return [LeadOut.model_validate(lead) for lead in leads]
+
+
+@router.get("/crm/managers", response_model=list[ManagerOut])
+def list_managers(context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> list[ManagerOut]:
+    managers = db.scalars(
+        select(Customer)
+        .where(Customer.is_active.is_(True), Customer.role.in_(("manager", "admin")))
+        .order_by(Customer.full_name, Customer.id)
+    ).all()
+    return [ManagerOut.model_validate(manager) for manager in managers]
 
 
 @router.patch("/crm/leads/{lead_id}", response_model=LeadOut)

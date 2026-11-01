@@ -9,9 +9,9 @@ Updated: 2026-11-01
 - Admin API and web surfaces for cars, customer/staff roles, and tariff versions. Admin key is required, constant-time compared, kept in browser memory, and role changes are audited. The final active administrator cannot be removed.
 - Customer API and localized account screen source: registration/login, scrypt password hashes, hashed bearer-session storage, expiry/revocation, profile edits, quote history, favorites, saved comparisons, order requests and cancellation. The UI is wired to the API but cannot be built until npm dependencies are available. Customers cannot set their own role.
 - Orders API: create/list/detail/cancel within the customer's own scope; staff status changes use explicit transitions and row locks. Customer responses omit internal staff notes.
-- CRM API and initial staff workspace source: public rate-limited lead intake, staff-only lead and interaction views/edits, manager assignment, status workflow, aggregate lead/order counts, and a staff login/lead management page. UI is currently English-only and uncompiled; manager assignment is by user ID.
+- CRM API and initial staff workspace source: public rate-limited lead intake, staff-only lead and interaction views/edits, manager assignment, status workflow, aggregate lead/order counts, and a staff login/lead management page. UI is currently English-only and uncompiled; manager assignment uses the staff-only active manager directory.
 - Alembic migration head `0006_crm` covers catalog, pricing, quote snapshots, identity, favorites/comparison, orders/events/doc metadata, and CRM.
-- 26 pytest tests pass; compileall passes; all six migrations generate PostgreSQL offline DDL. A real Uvicorn process serves OpenAPI with 28 routes, including auth, order, CRM, and admin endpoints.
+- 27 pytest tests pass; compileall passes; all six migrations generate PostgreSQL offline DDL. A real Uvicorn process serves OpenAPI with 29 routes, including auth, order, CRM, and admin endpoints.
 
 ## Not complete or not verified
 - npm registry returns EACCES. Next/React/Tailwind are only manifests/source; there is no lockfile, build, or typecheck evidence. Playwright is absent. Locale dictionaries execute under Node strip-types and have matching 29-key account dictionaries; this is not a frontend build.

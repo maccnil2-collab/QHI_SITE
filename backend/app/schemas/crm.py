@@ -96,3 +96,12 @@ class InteractionOut(BaseModel):
 class CRMOverview(BaseModel):
     leads_by_status: dict[str, int]
     orders_by_status: dict[str, int]
+
+
+class ManagerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    full_name: str
+    email_normalized: str
+    role: Literal["manager", "admin"]

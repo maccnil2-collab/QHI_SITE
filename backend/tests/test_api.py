@@ -81,7 +81,7 @@ def test_incomplete_tariff_cannot_be_activated(monkeypatch):
     assert response.json()["detail"].startswith("Cannot activate incomplete tariff")
 
 def test_order_and_staff_crm_routes_require_login_before_database_access():
-    for path in ("/api/v1/auth/me/orders", "/api/v1/auth/staff/orders", "/api/v1/crm/overview"):
+    for path in ("/api/v1/auth/me/orders", "/api/v1/auth/staff/orders", "/api/v1/crm/overview", "/api/v1/crm/managers"):
         response = client.get(path)
         assert response.status_code == 401
         assert response.headers["www-authenticate"] == "Bearer"
@@ -146,3 +146,23 @@ def test_quote_endpoint_rate_limits_anonymous_persistence(monkeypatch):
         app.dependency_overrides.pop(get_db, None)
     assert first.status_code == 503
     assert second.status_code == 429
+
+
+def test_staff_manager_directory_returns_only_minimal_manager_records(monkeypatch):
+    from app.core.auth import AuthContext, require_staff
+
+    manager = SimpleNamespace(id=4, full_name="Sales Manager", email_normalized="manager@example.test", role="manager")
+    fake_db = SimpleNamespace(scalars=lambda _statement: SimpleNamespace(all=lambda: [manager]))
+    staff = AuthContext(customer=SimpleNamespace(id=1, role="admin"), session=SimpleNamespace())
+    monkeypatch.setitem(app.dependency_overrides, require_staff, lambda: staff)
+    monkeypatch.setitem(app.dependency_overrides, get_db, lambda: fake_db)
+    try:
+        response = client.get("/api/v1/crm/managers")
+    finally:
+        app.dependency_overrides.pop(require_staff, None)
+        app.dependency_overrides.pop(get_db, None)
+    assert response.status_code == 200
+    assert response.json() == [{
+        "id": 4, "full_name": "Sales Manager",
+        "email_normalized": "manager@example.test", "role": "manager",
+    }]
