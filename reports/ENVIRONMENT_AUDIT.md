@@ -18,7 +18,7 @@ Date: 2026-11-01. Project: `C:\Users\Asus Notebook\QHI-AUTO`.
 | Playwright | Not found in venv/project |
 | VS Code / Figma / Windows build / RAM / free disk | Not checked in this project audit |
 
-Admin catalog/tariff and customer-role panel source exists. Customer account/order, public quote/enquiry, and initial CRM screen source has been added. No frontend dependency installation or compiled build has succeeded; CRM localization and manager lookup UI remain pending.
+Admin catalog/tariff and customer-role panel source exists. Customer account/order, public quote/enquiry, catalog favorite/comparison controls, and initial CRM screen source has been added. No frontend dependency installation or compiled build has succeeded; CRM localization and manager lookup UI remain pending.
 
 Node and Git live under `tools/`; system PATH was not changed. A PostgreSQL 18 installer already exists in `downloads/`; it was not rerun. No new programs were installed; added-program disk usage is 0 bytes. Existing `test.txt` remains untouched and untracked. Secrets were not stored.
 
