@@ -44,12 +44,12 @@ Workspace: `C:\Users\Asus Notebook\QHI-AUTO`
 
 - Python, pip, Node.js, npm, Git, VS Code, and Codex CLI report versions.
 - `pip check`: passed.
-- Backend tests: 37 passed; one Starlette/httpx deprecation warning remains.
+- Backend tests: 38 passed; one Starlette/httpx deprecation warning remains.
 - Python `compileall`: passed.
-- Alembic generated offline PostgreSQL SQL through migration head `0006_crm`.
-- OpenAPI exposes 32 paths, including database readiness, active customer-session listing and owner-scoped revocation, orders, CRM, and admin routes.
+- Alembic generated offline PostgreSQL SQL through migration head `0007_customer_notifications`.
+- OpenAPI exposes 35 paths, including database readiness, customer session and notification listing/read controls, orders, CRM, and admin routes.
 - API responses include baseline anti-sniffing, clickjacking, referrer, and permissions-policy headers; readiness returns a generic 503 without leaking database errors.
-- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 35-key schemas and CRM dictionaries matching 61-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
+- Frontend package and TypeScript JSON manifests parse. Three account locale dictionaries have matching 40-key schemas and CRM dictionaries matching 61-key schemas; both execute under Node's TypeScript stripping mode. All 17 TypeScript/TSX files pass compiler syntax transpilation using VS Code's bundled TypeScript.
 - `git diff --check`: passed before the latest checkpoint commits.
 
 ## Outstanding issues

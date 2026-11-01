@@ -7,5 +7,6 @@ from app.models.pricing import PricingTariff
 from app.models.quote import PriceQuote
 from app.models.orders import VehicleOrder, OrderEvent, OrderDocument
 from app.models.crm import CRMLead, CRMInteraction
+from app.models.notification import CustomerNotification
 
-__all__ = ["AuditEvent", "Customer", "CustomerSession", "CustomerFavorite", "CustomerComparisonItem", "Car", "CarImage", "CarTranslation", "PricingTariff", "PriceQuote", "VehicleOrder", "OrderEvent", "OrderDocument", "CRMLead", "CRMInteraction"]
+__all__ = ["AuditEvent", "Customer", "CustomerSession", "CustomerFavorite", "CustomerComparisonItem", "Car", "CarImage", "CarTranslation", "PricingTariff", "PriceQuote", "VehicleOrder", "OrderEvent", "OrderDocument", "CRMLead", "CRMInteraction", "CustomerNotification"]

@@ -68,3 +68,17 @@ class StaffOrderOut(OrderOut):
     customer_id: int
     customer: StaffCustomerOut
     events: list[StaffOrderEventOut]
+
+
+class NotificationOut(BaseModel):
+    id: int
+    order_id: int
+    order_number: str
+    status: OrderStatus | None
+    public_note: str | None
+    created_at: datetime
+    read_at: datetime | None
+
+
+class NotificationReadOut(BaseModel):
+    updated: int

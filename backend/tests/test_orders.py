@@ -50,3 +50,10 @@ def test_staff_order_contact_and_private_events_are_staff_only():
     assert "customer" not in OrderOut.model_fields
     assert "internal_note" not in OrderEventOut.model_fields
     assert customer.events[0].public_note == "Vehicle departed"
+
+
+def test_customer_notification_contract_excludes_private_staff_notes():
+    from app.schemas.orders import NotificationOut
+
+    assert "public_note" in NotificationOut.model_fields
+    assert "internal_note" not in NotificationOut.model_fields

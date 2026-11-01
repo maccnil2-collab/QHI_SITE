@@ -4,7 +4,7 @@ from functools import lru_cache
 from hashlib import sha256
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -12,12 +12,12 @@ from app.core.auth import AuthContext, get_auth_context, issue_session, require_
 from app.core.passwords import hash_password, verify_password
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
-from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerSession, OrderEvent, PriceQuote, VehicleOrder
+from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderEvent, PriceQuote, VehicleOrder
 from app.schemas.auth import AuthResponse, CustomerOut, CustomerSessionOut, LoginRequest, ProfileUpdate, RegisterRequest
 from app.schemas.car import CarOut
 from app.schemas.customer import ComparisonUpdate, FavoriteStatus
 from app.services.orders import transition_order
-from app.schemas.orders import OrderCreate, OrderOut, OrderStatusChange, StaffOrderOut
+from app.schemas.orders import NotificationOut, NotificationReadOut, OrderCreate, OrderOut, OrderStatusChange, StaffOrderOut
 from app.schemas.pricing import QuoteOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -95,6 +95,64 @@ def update_me(data: ProfileUpdate, context: AuthContext = Depends(get_auth_conte
 def logout(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> None:
     context.session.revoked_at = datetime.now(UTC)
     db.commit()
+
+
+def _notification_out(notification: CustomerNotification) -> NotificationOut:
+    return NotificationOut(
+        id=notification.id,
+        order_id=notification.order_id,
+        order_number=notification.order.order_number,
+        status=notification.event.status,
+        public_note=notification.event.public_note,
+        created_at=notification.created_at,
+        read_at=notification.read_at,
+    )
+
+
+def _notification_query():
+    return select(CustomerNotification).options(
+        selectinload(CustomerNotification.order),
+        selectinload(CustomerNotification.event),
+    )
+
+
+@router.get("/me/notifications", response_model=list[NotificationOut])
+def list_my_notifications(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> list[NotificationOut]:
+    rows = db.scalars(
+        _notification_query()
+        .where(CustomerNotification.customer_id == context.customer.id)
+        .order_by(CustomerNotification.created_at.desc())
+        .limit(100)
+    ).all()
+    return [_notification_out(row) for row in rows]
+
+
+@router.post("/me/notifications/{notification_id}/read", response_model=NotificationOut)
+def mark_notification_read(notification_id: int, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> NotificationOut:
+    notification = db.scalar(
+        _notification_query().where(
+            CustomerNotification.id == notification_id,
+            CustomerNotification.customer_id == context.customer.id,
+        )
+    )
+    if notification is None:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    if notification.read_at is None:
+        notification.read_at = datetime.now(UTC)
+        db.commit()
+        db.refresh(notification)
+    return _notification_out(notification)
+
+
+@router.post("/me/notifications/read-all", response_model=NotificationReadOut)
+def mark_all_notifications_read(context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> NotificationReadOut:
+    result = db.execute(
+        update(CustomerNotification)
+        .where(CustomerNotification.customer_id == context.customer.id, CustomerNotification.read_at.is_(None))
+        .values(read_at=datetime.now(UTC))
+    )
+    db.commit()
+    return NotificationReadOut(updated=result.rowcount or 0)
 
 
 @router.get("/me/sessions", response_model=list[CustomerSessionOut])
@@ -244,7 +302,10 @@ def create_order(data: OrderCreate, context: AuthContext = Depends(get_auth_cont
     )
     db.add(order)
     db.flush()
-    db.add(OrderEvent(order_id=order.id, actor_id=context.customer.id, event_type="created", status="requested"))
+    event = OrderEvent(order_id=order.id, actor_id=context.customer.id, event_type="created", status="requested")
+    db.add(event)
+    db.flush()
+    db.add(CustomerNotification(customer_id=context.customer.id, order_id=order.id, event_id=event.id))
     try:
         db.commit()
     except IntegrityError as error:
@@ -298,6 +359,9 @@ def staff_update_order(order_id: int, data: OrderStatusChange, context: AuthCont
         order.status = transition_order(order.status, data.status)
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    db.add(OrderEvent(order_id=order.id, actor_id=context.customer.id, event_type="status_changed", status=data.status, public_note=data.public_note, internal_note=data.internal_note))
+    event = OrderEvent(order_id=order.id, actor_id=context.customer.id, event_type="status_changed", status=data.status, public_note=data.public_note, internal_note=data.internal_note)
+    db.add(event)
+    db.flush()
+    db.add(CustomerNotification(customer_id=order.customer_id, order_id=order.id, event_id=event.id))
     db.commit()
     return StaffOrderOut.model_validate(db.scalar(_staff_order_query().where(VehicleOrder.id == order.id)))
