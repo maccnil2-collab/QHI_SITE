@@ -36,6 +36,7 @@ The vehicle detail route was added, and quote submission now uses the session-aw
 - All ten migrations applied to this fresh test database. `alembic current` reports `0010_shared_rate_limit_buckets`; `alembic check` reports no model/schema differences.
 - The opt-in PostgreSQL API workflow test passed and covers registration, login/session restore, CSRF, catalog search/filter/detail, quote calculation/history, favorites/comparison, customer orders, lead intake, staff CRM status/interactions/analytics, admin edit/publication round trips, admin catalog authorization, and shared/concurrent PostgreSQL rate limits.
 - The isolated database now contains generated integration fixtures and workflow records. They were left intact. No production DB was contacted.
+- Backup/restore drill: **PASS for schema and migration state only**. `pg_dump` created a custom-format backup of `qhi_auto_test`, then `pg_restore` restored it into the previously absent, separate `qhi_auto_restore_test` database. The restored revision is `0010_shared_rate_limit_buckets`; the `cars`, `customers`, `price_quotes`, `vehicle_orders`, and `crm_leads` tables are present. The restore target has zero rows in those tables; the current source database has 11, 11, 12, 11, and 10 respectively. Therefore this run does not establish recovery of populated business records (the backup snapshot was empty). The dump and both test databases were left intact. No production DB was contacted.
 - The API was started from `backend/` using only `backend/.env` on the normal local port `127.0.0.1:8000`; live `/health` and `/ready` returned `ok`/`ready` with database connected. It is currently running for local use.
 - Live HTTP checks against uvicorn returned 200 for health, readiness, localized catalog/search, vehicle detail, and quote calculation (test quote total 14,450.00 TJS).
 - Docker and Compose are unavailable in PATH. Compose/image/health checks remain unverified.
@@ -74,4 +75,4 @@ After npm dependencies are installed, run Playwright from `frontend/` with `QHI_
 1. Restore outbound access to npm registry or provide an approved mirror, then generate/review the lockfile and use `npm ci`.
 2. Resolve package peers, run typecheck, lint, Next build, and Playwright; fix failures based on actual output.
 3. Run browser scenarios against the isolated database and record actual results.
-4. Keep production deployment blocked on Docker/staging, TLS/reverse proxy, durable scanned document storage, backup/restore drills, monitoring, email verification/recovery, and key rotation.
+4. Keep production deployment blocked on Docker/staging, TLS/reverse proxy, durable scanned document storage, a populated-data restore drill, monitoring, email verification/recovery, and key rotation.

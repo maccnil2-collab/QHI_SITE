@@ -38,7 +38,7 @@ Updated: 2026-11-01
 ## Not verified
 
 - Next.js production build, full TypeScript semantic check, frontend lint, and Playwright. Tooling is configured, but the dependency-backed commands cannot run because `next`, `eslint`, and `playwright` are not installed.
-- Browser E2E, migration rollback, and backup/restore behavior.
+- Browser E2E and migration rollback. An isolated PostgreSQL custom-format backup restored successfully to a new test database at Alembic head; the drill used an empty business dataset, so populated-data recovery remains unverified.
 - Docker image builds, Compose health checks, TLS proxy behavior, and production deployment.
 
 The detailed current network/PostgreSQL diagnosis and journey matrix are in [FRONTEND_DATABASE_READINESS.md](FRONTEND_DATABASE_READINESS.md).
