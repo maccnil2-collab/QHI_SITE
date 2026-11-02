@@ -10,7 +10,7 @@ from sqlalchemy.pool import StaticPool
 from app.db import base, session as db_session
 from app.main import app
 from app.core.auth import require_staff
-from app.api.auth_routes import _require_test_payment_database
+from app.api.auth_routes import _require_test_email_outbox, _require_test_payment_database
 from fastapi import HTTPException
 from types import SimpleNamespace
 
@@ -50,6 +50,26 @@ def test_test_payment_tools_require_explicit_flag_nonproduction_and_test_databas
     with pytest.raises(HTTPException) as production:
         _require_test_payment_database(DatabaseName("qhi_auto_payment_test"))
     assert production.value.status_code == 404
+
+
+def test_password_recovery_outbox_is_restricted_to_nonproduction_test_database(monkeypatch):
+    class DatabaseName:
+        def __init__(self, name):
+            self.name = name
+
+        def scalar(self, _statement):
+            return self.name
+
+    monkeypatch.setenv("QHI_TEST_EMAIL_OUTBOX_ENABLED", "true")
+    monkeypatch.setenv("APP_ENV", "development")
+    _require_test_email_outbox(DatabaseName("qhi_auto_recovery_test"))
+    with pytest.raises(HTTPException) as demo_database:
+        _require_test_email_outbox(DatabaseName("qhi_auto_demo"))
+    assert demo_database.value.status_code == 503
+    monkeypatch.setenv("APP_ENV", "production")
+    with pytest.raises(HTTPException) as production:
+        _require_test_email_outbox(DatabaseName("qhi_auto_recovery_test"))
+    assert production.value.status_code == 503
 
 
 def test_test_payment_simulator_has_explicit_outcomes_and_no_checkout_url():

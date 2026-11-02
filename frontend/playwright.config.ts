@@ -41,14 +41,14 @@ export default defineConfig({
     {
       command: `..\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --app-dir ..\\backend --host 127.0.0.1 --port ${apiPort}`,
       url: `${apiBase}/ready`,
-      env: { DATABASE_URL: databaseUrl, APP_ENV: "development", QHI_TEST_PAYMENTS_ENABLED: "true", CORS_ORIGINS: webBase, ADMIN_API_KEY: adminKey },
+      env: { DATABASE_URL: databaseUrl, APP_ENV: "development", QHI_TEST_PAYMENTS_ENABLED: "true", QHI_TEST_EMAIL_OUTBOX_ENABLED: "true", CORS_ORIGINS: webBase, ADMIN_API_KEY: adminKey },
       timeout: 60_000,
       reuseExistingServer: false,
     },
     {
       command: `${nextCommand} dev --hostname 127.0.0.1 --port ${webPort}`,
       url: `${webBase}/en`,
-      env: { NEXT_PUBLIC_API_URL: apiBase, NEXT_PUBLIC_QHI_TEST_PAYMENTS_ENABLED: "true", NEXT_TELEMETRY_DISABLED: "1", NEXT_DIST_DIR: ".next-e2e" },
+      env: { NEXT_PUBLIC_API_URL: apiBase, NEXT_PUBLIC_QHI_TEST_PAYMENTS_ENABLED: "true", NEXT_PUBLIC_QHI_TEST_EMAIL_OUTBOX_ENABLED: "true", NEXT_TELEMETRY_DISABLED: "1", NEXT_DIST_DIR: ".next-e2e" },
       timeout: 120_000,
       reuseExistingServer: false,
     },

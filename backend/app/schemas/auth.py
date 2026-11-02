@@ -40,6 +40,36 @@ class LoginRequest(BaseModel):
     password: SecretStr = Field(min_length=1, max_length=128)
 
 
+class PasswordResetRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value.count("@") != 1:
+            raise ValueError("Enter a valid email address")
+        local, domain = value.split("@")
+        if not local or "." not in domain or domain.startswith(".") or domain.endswith(".") or any(ch.isspace() for ch in value):
+            raise ValueError("Enter a valid email address")
+        return value
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str = Field(min_length=32, max_length=128)
+    new_password: SecretStr = Field(min_length=12, max_length=128)
+
+
+class PasswordResetRequestOut(BaseModel):
+    accepted: bool
+    message: str
+    test_token: str | None = None
+
+
+class PasswordResetConfirmOut(BaseModel):
+    updated: bool
+
+
 class ProfileUpdate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

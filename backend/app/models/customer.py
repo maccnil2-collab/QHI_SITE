@@ -33,3 +33,16 @@ class CustomerSession(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     customer: Mapped[Customer] = relationship(back_populates="sessions", foreign_keys=[customer_id])
+
+
+class AccountActionToken(Base):
+    """Single-use, hashed account action tokens such as password recovery."""
+    __tablename__ = "account_action_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), index=True)
+    purpose: Mapped[str] = mapped_column(String(32), index=True)
+    token_digest: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

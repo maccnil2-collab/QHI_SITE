@@ -31,13 +31,13 @@ if _TEST_DATABASE_URL:
 @pytest.mark.skipif(not _TEST_DATABASE_URL, reason="Set QHI_TEST_DATABASE_URL to a disposable loopback *_test database")
 def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin(monkeypatch):
     from fastapi.testclient import TestClient
-    from sqlalchemy import select, update
+    from sqlalchemy import func, select, update
 
     from app.core.passwords import hash_password
     from app.db.session import SessionLocal
     from app.main import app
     from app.core.rate_limit import SlidingWindowLimiter
-    from app.models import Car, CarImage, CarTranslation, Customer, PricingTariff
+    from app.models import AccountActionToken, Car, CarImage, CarTranslation, Customer, CustomerSession, PricingTariff
 
     assert SessionLocal is not None
     marker = uuid4().hex[:10]
@@ -48,7 +48,7 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin(monkeypatc
         current_database = db.scalar(text("SELECT current_database()"))
         revision = db.scalar(text("SELECT version_num FROM alembic_version"))
         assert current_database == make_url(_TEST_DATABASE_URL).database
-        assert revision == "0013_order_payment_ledger"
+        assert revision == "0014_account_action_tokens"
 
         car = Car(
             slug=slug, brand="Integration", model="EV", trim="Test", year=2026,
@@ -235,6 +235,32 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin(monkeypatc
         assert interaction.status_code == 201, interaction.text
         analytics = client.get("/api/v1/crm/analytics")
         assert analytics.status_code == 200, analytics.text
+
+        # Password recovery is available only through the isolated TEST outbox.
+        monkeypatch.delenv("QHI_TEST_EMAIL_OUTBOX_ENABLED", raising=False)
+        assert client.post("/api/v1/auth/password-reset/request", json={"email": email}).status_code == 503
+        monkeypatch.setenv("QHI_TEST_EMAIL_OUTBOX_ENABLED", "true")
+        monkeypatch.setenv("APP_ENV", "production")
+        assert client.post("/api/v1/auth/password-reset/request", json={"email": email}).status_code == 503
+        monkeypatch.setenv("APP_ENV", "development")
+        recovery = client.post("/api/v1/auth/password-reset/request", json={"email": email})
+        assert recovery.status_code == 202, recovery.text
+        recovery_token = recovery.json()["test_token"]
+        assert recovery.json()["message"] == "TEST outbox only: no email was sent."
+        with SessionLocal() as db:
+            saved_token = db.scalar(select(AccountActionToken).where(AccountActionToken.customer_id == registered.json()["customer"]["id"]))
+            assert saved_token is not None and saved_token.token_digest != recovery_token
+            assert len(saved_token.token_digest) == 64
+            active_sessions_before = db.scalar(select(func.count()).select_from(CustomerSession).where(CustomerSession.customer_id == saved_token.customer_id, CustomerSession.revoked_at.is_(None)))
+            assert active_sessions_before >= 1
+        new_password = "Integration-Recovered-Password-1234!"
+        recovered = client.post("/api/v1/auth/password-reset/confirm", json={"token": recovery_token, "new_password": new_password})
+        assert recovered.status_code == 200, recovered.text
+        assert client.get("/api/v1/auth/me").status_code == 401
+        assert client.post("/api/v1/auth/password-reset/confirm", json={"token": recovery_token, "new_password": new_password}).status_code == 400
+        assert client.post("/api/v1/auth/login", json={"email": email, "password": "Integration-Password-1234!"}).status_code == 401
+        new_login = client.post("/api/v1/auth/login", json={"email": email, "password": new_password})
+        assert new_login.status_code == 200, new_login.text
 
     with SessionLocal() as db:
         assert db.scalar(select(Customer.id).where(Customer.email_normalized == email)) is not None

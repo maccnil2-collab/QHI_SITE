@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 import os
 import secrets
@@ -17,8 +17,8 @@ from app.core.config import settings
 from app.core.passwords import hash_password, verify_password
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
-from app.models import AuditEvent, Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderDocument, OrderEvent, PaymentAttempt, PaymentEvent, PriceQuote, VehicleOrder
-from app.schemas.auth import AuthResponse, CustomerOut, CustomerSessionOut, LoginRequest, ProfileUpdate, RegisterRequest
+from app.models import AccountActionToken, AuditEvent, Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderDocument, OrderEvent, PaymentAttempt, PaymentEvent, PriceQuote, VehicleOrder
+from app.schemas.auth import AuthResponse, CustomerOut, CustomerSessionOut, LoginRequest, PasswordResetConfirm, PasswordResetConfirmOut, PasswordResetRequest, PasswordResetRequestOut, ProfileUpdate, RegisterRequest
 from app.schemas.car import CarOut
 from app.schemas.customer import ComparisonUpdate, FavoriteStatus
 from app.services.orders import transition_order
@@ -32,8 +32,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 register_limiter = SlidingWindowLimiter(max_requests=5, window_seconds=60)
 login_limiter = SlidingWindowLimiter(max_requests=8, window_seconds=60)
 document_limiter = SlidingWindowLimiter(max_requests=8, window_seconds=60)
+password_reset_request_limiter = SlidingWindowLimiter(max_requests=5, window_seconds=3600)
+password_reset_confirm_limiter = SlidingWindowLimiter(max_requests=10, window_seconds=3600)
 MAX_DOCUMENTS_PER_ORDER = 25
 MAX_DOCUMENT_BYTES_PER_ORDER = 100 * 1024 * 1024
+PASSWORD_RESET_TTL = timedelta(minutes=30)
+PASSWORD_RESET_PURPOSE = "password_reset"
 
 
 @lru_cache(maxsize=1)
@@ -50,6 +54,14 @@ def _check_auth_origin(request: Request) -> None:
     origin = request.headers.get("origin")
     if origin is not None and origin not in settings.cors_origins:
         raise HTTPException(status_code=403, detail="Request origin is not allowed")
+
+
+def _require_test_email_outbox(db: Session) -> None:
+    if os.getenv("APP_ENV", "development").lower() == "production" or os.getenv("QHI_TEST_EMAIL_OUTBOX_ENABLED", "").lower() != "true":
+        raise HTTPException(status_code=503, detail="Password recovery email delivery is not configured")
+    database_name = db.scalar(text("SELECT current_database()"))
+    if not isinstance(database_name, str) or not database_name.endswith("_test"):
+        raise HTTPException(status_code=503, detail="Password recovery email delivery is not configured")
 
 
 def _auth_response(customer: Customer, db: Session, response: Response) -> AuthResponse:
@@ -94,6 +106,69 @@ def login(data: LoginRequest, request: Request, response: Response, db: Session 
     if customer is None or not valid_password or not customer.is_active:
         raise HTTPException(status_code=401, detail="Invalid email or password", headers={"WWW-Authenticate": "Bearer"})
     return _auth_response(customer, db, response)
+
+
+@router.post("/password-reset/request", response_model=PasswordResetRequestOut, status_code=202)
+def request_password_reset(data: PasswordResetRequest, request: Request, db: Session = Depends(get_db)) -> PasswordResetRequestOut:
+    _check_auth_origin(request)
+    password_reset_request_limiter.check(_rate_key(request, "password-reset"), db)
+    _require_test_email_outbox(db)
+    customer = db.scalar(select(Customer).where(Customer.email_normalized == data.email, Customer.is_active.is_(True)))
+    if customer is None:
+        return PasswordResetRequestOut(accepted=True, message="If the account exists, a recovery request was accepted.")
+    now = datetime.now(UTC)
+    db.execute(update(AccountActionToken).where(
+        AccountActionToken.customer_id == customer.id,
+        AccountActionToken.purpose == PASSWORD_RESET_PURPOSE,
+        AccountActionToken.consumed_at.is_(None),
+    ).values(consumed_at=now))
+    raw_token = secrets.token_urlsafe(32)
+    db.add(AccountActionToken(
+        customer_id=customer.id,
+        purpose=PASSWORD_RESET_PURPOSE,
+        token_digest=sha256(raw_token.encode("ascii")).hexdigest(),
+        expires_at=now + PASSWORD_RESET_TTL,
+    ))
+    db.add(AuditEvent(actor="password-reset", action="request", entity_type="customer", entity_id=str(customer.id), payload={"purpose": PASSWORD_RESET_PURPOSE}))
+    db.commit()
+    return PasswordResetRequestOut(
+        accepted=True,
+        message="TEST outbox only: no email was sent.",
+        test_token=raw_token,
+    )
+
+
+@router.post("/password-reset/confirm", response_model=PasswordResetConfirmOut)
+def confirm_password_reset(data: PasswordResetConfirm, request: Request, db: Session = Depends(get_db)) -> PasswordResetConfirmOut:
+    _check_auth_origin(request)
+    password_reset_confirm_limiter.check(_rate_key(request, "password-reset-confirm"), db)
+    _require_test_email_outbox(db)
+    token_digest = sha256(data.token.encode("utf-8")).hexdigest()
+    action_token = db.scalar(select(AccountActionToken).where(
+        AccountActionToken.token_digest == token_digest,
+        AccountActionToken.purpose == PASSWORD_RESET_PURPOSE,
+    ).with_for_update())
+    now = datetime.now(UTC)
+    if action_token is None or action_token.consumed_at is not None or action_token.expires_at <= now:
+        raise HTTPException(status_code=400, detail="Recovery token is invalid or expired")
+    customer = db.scalar(select(Customer).where(Customer.id == action_token.customer_id).with_for_update())
+    if customer is None or not customer.is_active:
+        raise HTTPException(status_code=400, detail="Recovery token is invalid or expired")
+    customer.password_hash = hash_password(data.new_password.get_secret_value())
+    action_token.consumed_at = now
+    db.execute(update(AccountActionToken).where(
+        AccountActionToken.customer_id == customer.id,
+        AccountActionToken.purpose == PASSWORD_RESET_PURPOSE,
+        AccountActionToken.id != action_token.id,
+        AccountActionToken.consumed_at.is_(None),
+    ).values(consumed_at=now))
+    db.execute(update(CustomerSession).where(
+        CustomerSession.customer_id == customer.id,
+        CustomerSession.revoked_at.is_(None),
+    ).values(revoked_at=now))
+    db.add(AuditEvent(actor="password-reset", action="complete", entity_type="customer", entity_id=str(customer.id), payload={"purpose": PASSWORD_RESET_PURPOSE}))
+    db.commit()
+    return PasswordResetConfirmOut(updated=True)
 
 
 @router.get("/me", response_model=CustomerOut)

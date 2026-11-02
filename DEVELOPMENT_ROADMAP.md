@@ -34,7 +34,7 @@ Priorities are ordered by dependency and risk. Do not publish legal, tariff, inv
 
 ## 3. Close identity and security gaps
 
-- Design email verification and password recovery, with token expiry, single-use semantics, rate limits, and an approved mail adapter.
+- IN PROGRESS: password recovery has a TEST-only API/UI path with hashed, 30-minute, single-use tokens, IP rate limits, audit events, and session revocation. It returns a clearly labeled test token and sends no email. Migration `0014_account_action_tokens` and PostgreSQL/browser verification are pending; do not enable the feature outside an isolated `*_test` database. An approved mail adapter and email verification remain future work.
 - Add automated retention/observability for rate-limit buckets and tune limits behind a production reverse proxy.
 - Review staff session lifecycle, admin bootstrap-key migration/rotation, audit retention, proxy trust, CORS, and security headers.
 - Add browser-level CSRF and cross-origin regression coverage.

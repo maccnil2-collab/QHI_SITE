@@ -79,6 +79,22 @@ test("customer registers, restores their session, saves a quote and creates an o
   await page.reload();
   await page.getByRole("button", { name: "Simulate test refund" }).click();
   await expect(page.getByText("TEST · refunded")).toBeVisible();
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByRole("button", { name: "Forgot password?" }).click();
+  await page.getByLabel("Email address").fill(email);
+  await page.getByRole("button", { name: "Request recovery" }).click();
+  await expect(page.locator(".password-reset-test-token")).toBeVisible();
+  const resetToken = (await page.locator(".password-reset-test-token code").textContent())!;
+  await page.getByLabel("Recovery token").fill(resetToken);
+  const recoveredPassword = "QHI-Recovered-Password-2026!";
+  await page.getByLabel("New password").fill(recoveredPassword);
+  await page.getByRole("button", { name: "Update password" }).click();
+  await expect(page.getByText("Password changed. Sign in with the new password.")).toBeVisible();
+  await page.getByLabel("Email address").fill(email);
+  await page.getByLabel("Password").fill(recoveredPassword);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "QHI E2E Customer" })).toBeVisible();
 });
 
 test("staff manages a CRM lead and the admin catalog panel connects", async ({ page, request }) => {
