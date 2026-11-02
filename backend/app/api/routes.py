@@ -112,6 +112,8 @@ def get_car(slug: str, locale: Literal["ru", "tg", "en"] = "ru", db: Session = D
 def quote(data: QuoteRequest, request: Request, db: Session = Depends(get_db), customer: Customer | None = Depends(get_optional_customer)) -> QuoteOut:
     host = request.client.host if request.client else "unknown"
     quote_limiter.check(f"quote:{host}", db)
+    if data.car_id is not None and db.scalar(select(Car.id).where(Car.id == data.car_id, Car.published.is_(True))) is None:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
     tariff = db.scalar(select(PricingTariff).where(PricingTariff.active.is_(True), PricingTariff.effective_on <= date.today()).order_by(PricingTariff.effective_on.desc()))
     if tariff is None:
         raise HTTPException(status_code=503, detail="No current pricing tariff is configured")
@@ -130,6 +132,7 @@ def quote(data: QuoteRequest, request: Request, db: Session = Depends(get_db), c
     except ValueError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     quote = PriceQuote(
+        car_id=data.car_id,
         tariff_id=tariff.id,
         customer_id=customer.id if customer else None,
         tariff_name=tariff.name,
@@ -149,4 +152,4 @@ def quote(data: QuoteRequest, request: Request, db: Session = Depends(get_db), c
     db.add(quote)
     db.commit()
     db.refresh(quote)
-    return QuoteOut(id=quote.id, created_at=quote.created_at, currency=quote.currency, price_cny=quote.price_cny, cny_to_tjs=quote.cny_to_tjs, customs_rate=quote.customs_rate, **result)
+    return QuoteOut(id=quote.id, car_id=quote.car_id, created_at=quote.created_at, currency=quote.currency, price_cny=quote.price_cny, cny_to_tjs=quote.cny_to_tjs, customs_rate=quote.customs_rate, **result)

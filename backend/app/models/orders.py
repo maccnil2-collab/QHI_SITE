@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from decimal import Decimal
+
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -13,6 +15,9 @@ class VehicleOrder(Base):
     order_number: Mapped[str] = mapped_column(String(24), unique=True, index=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id", ondelete="RESTRICT"), index=True)
     car_id: Mapped[int] = mapped_column(ForeignKey("cars.id", ondelete="RESTRICT"), index=True)
+    quote_id: Mapped[int | None] = mapped_column(ForeignKey("price_quotes.id", ondelete="RESTRICT"), nullable=True, index=True)
+    quoted_amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="requested", index=True)
     customer_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

@@ -64,6 +64,8 @@ test("customer registers, restores their session, saves a quote and creates an o
   await page.getByRole("button", { name: "Submit request" }).click();
   await expect(page.getByText("Request created")).toBeVisible();
   await expect(page.locator(".account-record").filter({ hasText: "Integration EV" })).toBeVisible();
+  await page.getByRole("button", { name: "Simulate TEST payment" }).click();
+  await expect(page.getByText("TEST · succeeded")).toBeVisible();
 });
 
 test("staff manages a CRM lead and the admin catalog panel connects", async ({ page, request }) => {

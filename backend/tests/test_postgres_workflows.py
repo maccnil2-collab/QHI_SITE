@@ -29,7 +29,7 @@ if _TEST_DATABASE_URL:
 
 
 @pytest.mark.skipif(not _TEST_DATABASE_URL, reason="Set QHI_TEST_DATABASE_URL to a disposable loopback *_test database")
-def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
+def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin(monkeypatch):
     from fastapi.testclient import TestClient
     from sqlalchemy import select, update
 
@@ -48,7 +48,7 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         current_database = db.scalar(text("SELECT current_database()"))
         revision = db.scalar(text("SELECT version_num FROM alembic_version"))
         assert current_database == make_url(_TEST_DATABASE_URL).database
-        assert revision == "0012_structured_vehicle_specs"
+        assert revision == "0013_order_payment_ledger"
 
         car = Car(
             slug=slug, brand="Integration", model="EV", trim="Test", year=2026,
@@ -138,7 +138,7 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         assert detail.status_code == 200
         assert detail.json()["localized_title"] == "Integration vehicle"
 
-        quote = client.post("/api/v1/quotes", json={"price_cny": "10000.00"}, headers={"X-CSRF-Token": csrf})
+        quote = client.post("/api/v1/quotes", json={"price_cny": "10000.00", "car_id": car_id}, headers={"X-CSRF-Token": csrf})
         assert quote.status_code == 200, quote.text
         quote_id = quote.json()["id"]
         result = quote.json()
@@ -151,10 +151,33 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         comparison = client.put("/api/v1/auth/me/comparison", json={"car_ids": [car_id]}, headers={"X-CSRF-Token": csrf})
         assert comparison.status_code == 200, comparison.text
 
-        order = client.post("/api/v1/auth/me/orders", json={"car_id": car_id, "customer_note": "Integration order"}, headers={"X-CSRF-Token": csrf})
+        order = client.post("/api/v1/auth/me/orders", json={"car_id": car_id, "quote_id": quote_id, "customer_note": "Integration order"}, headers={"X-CSRF-Token": csrf})
         assert order.status_code == 201, order.text
         assert order.json()["status"] == "requested"
+        assert order.json()["quote_id"] == quote_id
+        assert Decimal(order.json()["quoted_amount"]) == Decimal(quote.json()["total_tjs"])
         assert len(client.get("/api/v1/auth/me/orders").json()) == 1
+
+        payment_path = f"/api/v1/auth/me/orders/{order.json()['id']}/payments/test"
+        monkeypatch.delenv("QHI_TEST_PAYMENTS_ENABLED", raising=False)
+        assert client.post(payment_path, json={"idempotency_key": f"blocked-{marker}", "outcome": "approved"}, headers={"X-CSRF-Token": csrf}).status_code == 404
+        monkeypatch.setenv("QHI_TEST_PAYMENTS_ENABLED", "true")
+        monkeypatch.setenv("APP_ENV", "production")
+        assert client.post(payment_path, json={"idempotency_key": f"production-{marker}", "outcome": "approved"}, headers={"X-CSRF-Token": csrf}).status_code == 404
+        monkeypatch.setenv("APP_ENV", "development")
+        assert client.get("/api/v1/auth/staff/payments").status_code == 403
+        unquoted_order = client.post("/api/v1/auth/me/orders", json={"car_id": car_id}, headers={"X-CSRF-Token": csrf})
+        assert unquoted_order.status_code == 201
+        unquoted_payment = client.post(f"/api/v1/auth/me/orders/{unquoted_order.json()['id']}/payments/test", json={"idempotency_key": f"noquote-{marker}", "outcome": "approved"}, headers={"X-CSRF-Token": csrf})
+        assert unquoted_payment.status_code == 409
+        payment = client.post(payment_path, json={"idempotency_key": f"charge-{marker}", "outcome": "approved"}, headers={"X-CSRF-Token": csrf})
+        assert payment.status_code == 201, payment.text
+        assert payment.json()["provider"] == "test_simulator"
+        assert payment.json()["status"] == "succeeded"
+        assert "no funds were transferred" in payment.json()["events"][0]["note"]
+        replay = client.post(payment_path, json={"idempotency_key": f"charge-{marker}", "outcome": "declined"}, headers={"X-CSRF-Token": csrf})
+        assert replay.status_code == 200 and replay.json()["status"] == "succeeded"
+        assert len(client.get(f"/api/v1/auth/me/orders/{order.json()['id']}/payments").json()) == 1
 
         lead = client.post("/api/v1/leads", json={
             "name": "Integration Lead", "email": f"lead-{marker}@example.test",
@@ -170,6 +193,22 @@ def test_postgres_backed_customer_catalog_quotes_orders_crm_and_admin():
         headers = {"X-Admin-Token": os.environ["ADMIN_API_KEY"]}
         admin_catalog = client.get("/api/v1/admin/cars", headers=headers)
         assert admin_catalog.status_code == 200, admin_catalog.text
+        refund_path = f"/api/v1/auth/staff/payments/{payment.json()['public_id']}/refund/test"
+        partial_refund = client.post(refund_path, json={"idempotency_key": f"refund-{marker}-part", "amount": "1.00", "note": "Partial workflow test refund"}, headers={"X-CSRF-Token": csrf})
+        assert partial_refund.status_code == 200, partial_refund.text
+        assert partial_refund.json()["status"] == "partially_refunded"
+        too_much_refund = client.post(refund_path, json={"idempotency_key": f"refund-{marker}-over", "amount": payment.json()["amount"], "note": "Must exceed remaining balance"}, headers={"X-CSRF-Token": csrf})
+        assert too_much_refund.status_code == 409
+        full_refund_amount = Decimal(payment.json()["amount"]) - Decimal("1.00")
+        full_refund = client.post(refund_path, json={"idempotency_key": f"refund-{marker}-full", "amount": str(full_refund_amount), "note": "Complete workflow test refund"}, headers={"X-CSRF-Token": csrf})
+        assert full_refund.status_code == 200, full_refund.text
+        assert full_refund.json()["status"] == "refunded"
+        duplicate_refund = client.post(refund_path, json={"idempotency_key": f"refund-{marker}-full", "amount": "1.00", "note": "Idempotent replay"}, headers={"X-CSRF-Token": csrf})
+        assert duplicate_refund.status_code == 200 and duplicate_refund.json()["status"] == "refunded"
+        staff_payments = client.get("/api/v1/auth/staff/payments").json()
+        assert any(item["public_id"] == payment.json()["public_id"] and item["status"] == "refunded" for item in staff_payments)
+        notifications = client.get("/api/v1/auth/me/notifications").json()
+        assert any("TEST refund recorded" in (item["public_note"] or "") for item in notifications)
         admin_car = next(item for item in admin_catalog.json() if item["id"] == car_id)
         assert admin_car["published"] is True
         update_payload = {

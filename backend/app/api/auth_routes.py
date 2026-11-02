@@ -1,4 +1,6 @@
 from datetime import UTC, datetime
+from decimal import Decimal
+import os
 import secrets
 from functools import lru_cache
 from hashlib import sha256
@@ -6,7 +8,7 @@ from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -15,14 +17,16 @@ from app.core.config import settings
 from app.core.passwords import hash_password, verify_password
 from app.core.rate_limit import SlidingWindowLimiter
 from app.db.session import get_db
-from app.models import Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderDocument, OrderEvent, PriceQuote, VehicleOrder
+from app.models import AuditEvent, Car, CarImage, CarTranslation, Customer, CustomerComparisonItem, CustomerFavorite, CustomerNotification, CustomerSession, OrderDocument, OrderEvent, PaymentAttempt, PaymentEvent, PriceQuote, VehicleOrder
 from app.schemas.auth import AuthResponse, CustomerOut, CustomerSessionOut, LoginRequest, ProfileUpdate, RegisterRequest
 from app.schemas.car import CarOut
 from app.schemas.customer import ComparisonUpdate, FavoriteStatus
 from app.services.orders import transition_order
 from app.schemas.orders import NotificationOut, NotificationReadOut, OrderCreate, OrderDocumentOut, OrderOut, OrderStatusChange, StaffOrderOut
 from app.schemas.pricing import QuoteOut
+from app.schemas.payments import PaymentEventOut, PaymentOut, RefundRequest, TestPaymentRequest
 from app.services.documents import DocumentValidationError, MAX_DOCUMENT_SIZE, read_upload, resolve_document, store_document
+from app.services.payment_providers import TestPaymentSimulator
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 register_limiter = SlidingWindowLimiter(max_requests=5, window_seconds=60)
@@ -435,15 +439,47 @@ def _staff_order_query():
     return _order_query().options(selectinload(VehicleOrder.customer))
 
 
+def _require_test_payment_database(db: Session) -> None:
+    if os.getenv("APP_ENV", "development").lower() == "production" or os.getenv("QHI_TEST_PAYMENTS_ENABLED", "").lower() != "true":
+        raise HTTPException(status_code=404, detail="Test payment tools are unavailable")
+    database_name = db.scalar(text("SELECT current_database()"))
+    if not isinstance(database_name, str) or not database_name.endswith("_test"):
+        raise HTTPException(status_code=404, detail="Test payment tools are unavailable")
+
+
+def _payment_output(db: Session, attempt: PaymentAttempt) -> PaymentOut:
+    events = db.scalars(
+        select(PaymentEvent).where(PaymentEvent.payment_attempt_id == attempt.id).order_by(PaymentEvent.created_at, PaymentEvent.id)
+    ).all()
+    return PaymentOut.model_validate({
+        "public_id": attempt.public_id,
+        "order_id": attempt.order_id,
+        "provider": attempt.provider,
+        "amount": attempt.amount,
+        "currency": attempt.currency,
+        "status": attempt.status,
+        "created_at": attempt.created_at,
+        "events": events,
+    })
+
+
 @router.post("/me/orders", response_model=OrderOut, status_code=201)
 def create_order(data: OrderCreate, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> OrderOut:
     car = db.scalar(select(Car).where(Car.id == data.car_id, Car.published.is_(True)))
     if car is None:
         raise HTTPException(status_code=404, detail="Vehicle not found")
+    quote = None
+    if data.quote_id is not None:
+        quote = db.scalar(select(PriceQuote).where(PriceQuote.id == data.quote_id, PriceQuote.customer_id == context.customer.id, PriceQuote.car_id == car.id))
+        if quote is None:
+            raise HTTPException(status_code=422, detail="Choose a saved estimate calculated for this vehicle")
     order = VehicleOrder(
         order_number=f"QHI-{datetime.now(UTC).year}-{secrets.token_hex(4).upper()}",
         customer_id=context.customer.id,
         car_id=car.id,
+        quote_id=quote.id if quote else None,
+        quoted_amount=quote.total_tjs if quote else None,
+        currency=quote.currency if quote else None,
         status="requested",
         customer_note=data.customer_note,
     )
@@ -460,6 +496,129 @@ def create_order(data: OrderCreate, context: AuthContext = Depends(get_auth_cont
         raise HTTPException(status_code=409, detail="Could not create order; retry the request") from error
     result = db.scalar(_order_query().where(VehicleOrder.id == order.id))
     return OrderOut.model_validate(result)
+
+
+@router.get("/me/orders/{order_id}/payments", response_model=list[PaymentOut])
+def list_my_order_payments(order_id: int, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> list[PaymentOut]:
+    if db.scalar(select(VehicleOrder.id).where(VehicleOrder.id == order_id, VehicleOrder.customer_id == context.customer.id)) is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    attempts = db.scalars(select(PaymentAttempt).where(PaymentAttempt.order_id == order_id, PaymentAttempt.customer_id == context.customer.id).order_by(PaymentAttempt.created_at.desc())).all()
+    return [_payment_output(db, attempt) for attempt in attempts]
+
+
+@router.post("/me/orders/{order_id}/payments/test", response_model=PaymentOut, status_code=201)
+def simulate_test_payment(order_id: int, data: TestPaymentRequest, response: Response, context: AuthContext = Depends(get_auth_context), db: Session = Depends(get_db)) -> PaymentOut:
+    _require_test_payment_database(db)
+    order = db.scalar(
+        select(VehicleOrder).options(selectinload(VehicleOrder.car)).where(
+            VehicleOrder.id == order_id, VehicleOrder.customer_id == context.customer.id
+        ).with_for_update()
+    )
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.car.is_demo:
+        raise HTTPException(status_code=409, detail="Test payments are disabled for DEMO vehicles")
+    if order.status == "cancelled":
+        raise HTTPException(status_code=409, detail="Cancelled orders cannot receive test payments")
+    if order.quote_id is None or order.quoted_amount is None or order.currency is None or order.quoted_amount <= 0:
+        raise HTTPException(status_code=409, detail="Create this order from a saved vehicle estimate before testing payment")
+    existing = db.scalar(select(PaymentAttempt).where(PaymentAttempt.idempotency_key == data.idempotency_key))
+    if existing is not None:
+        if existing.order_id != order_id or existing.customer_id != context.customer.id:
+            raise HTTPException(status_code=409, detail="Idempotency key is already assigned to another payment")
+        response.status_code = status.HTTP_200_OK
+        return _payment_output(db, existing)
+    if db.scalar(select(PaymentAttempt.id).where(PaymentAttempt.order_id == order_id, PaymentAttempt.status.in_(["succeeded", "partially_refunded", "refunded"]))) is not None:
+        raise HTTPException(status_code=409, detail="This order already has a successful payment")
+    simulated = TestPaymentSimulator().simulate(outcome=data.outcome, idempotency_key=data.idempotency_key)
+    attempt = PaymentAttempt(
+        public_id=secrets.token_urlsafe(24), order_id=order.id, customer_id=context.customer.id,
+        provider=TestPaymentSimulator.name, provider_reference=simulated.provider_reference,
+        idempotency_key=data.idempotency_key, amount=order.quoted_amount,
+        currency=order.currency, status=simulated.status,
+    )
+    db.add(attempt)
+    try:
+        db.flush()
+        event = PaymentEvent(
+            payment_attempt_id=attempt.id, actor_customer_id=context.customer.id,
+            event_type="payment_succeeded" if simulated.status == "succeeded" else "payment_declined",
+            amount=attempt.amount, currency=attempt.currency,
+            idempotency_key=f"pay:{data.idempotency_key}",
+            note="TEST simulation only; no funds were transferred.",
+        )
+        db.add(event)
+        if simulated.status == "succeeded":
+            order_event = OrderEvent(
+                order_id=order.id, actor_id=context.customer.id, event_type="payment_test_succeeded",
+                public_note="TEST payment simulation succeeded; no funds were transferred.",
+            )
+            db.add(order_event)
+            db.flush()
+            db.add(CustomerNotification(customer_id=context.customer.id, order_id=order.id, event_id=order_event.id))
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        existing = db.scalar(select(PaymentAttempt).where(PaymentAttempt.idempotency_key == data.idempotency_key))
+        if existing is not None and existing.order_id == order_id and existing.customer_id == context.customer.id:
+            response.status_code = status.HTTP_200_OK
+            return _payment_output(db, existing)
+        raise HTTPException(status_code=409, detail="Payment request conflicts with an existing idempotency key") from error
+    db.refresh(attempt)
+    return _payment_output(db, attempt)
+
+
+@router.post("/staff/payments/{public_id}/refund/test", response_model=PaymentOut)
+def simulate_test_refund(public_id: str, data: RefundRequest, context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> PaymentOut:
+    _require_test_payment_database(db)
+    if context.customer.role != "admin":
+        raise HTTPException(status_code=403, detail="Administrator access required for refunds")
+    attempt = db.scalar(select(PaymentAttempt).where(PaymentAttempt.public_id == public_id).with_for_update())
+    if attempt is None:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if attempt.provider != TestPaymentSimulator.name:
+        raise HTTPException(status_code=409, detail="Only TEST simulator payments can be refunded here")
+    refund_event_key = f"refund:{data.idempotency_key}"
+    previous = db.scalar(select(PaymentEvent).where(PaymentEvent.idempotency_key == refund_event_key))
+    if previous is not None:
+        if previous.payment_attempt_id != attempt.id or previous.event_type != "refund_succeeded":
+            raise HTTPException(status_code=409, detail="Idempotency key is already assigned to another ledger event")
+        return _payment_output(db, attempt)
+    refunded = db.scalar(select(func.coalesce(func.sum(PaymentEvent.amount), 0)).where(
+        PaymentEvent.payment_attempt_id == attempt.id, PaymentEvent.event_type == "refund_succeeded"
+    ))
+    if attempt.status not in {"succeeded", "partially_refunded"} or data.amount > attempt.amount - refunded:
+        raise HTTPException(status_code=409, detail="Refund exceeds the unrefunded successful test payment")
+    db.add(PaymentEvent(
+        payment_attempt_id=attempt.id, actor_customer_id=context.customer.id,
+        event_type="refund_succeeded", amount=data.amount, currency=attempt.currency,
+        idempotency_key=refund_event_key, note=data.note,
+    ))
+    remaining = attempt.amount - refunded - data.amount
+    attempt.status = "refunded" if remaining == 0 else "partially_refunded"
+    order_event = OrderEvent(
+        order_id=attempt.order_id, actor_id=context.customer.id, event_type="refund_test_recorded",
+        public_note=f"TEST refund recorded: {data.amount} {attempt.currency}; no funds were transferred.",
+    )
+    db.add(order_event)
+    db.flush()
+    db.add(CustomerNotification(customer_id=attempt.customer_id, order_id=attempt.order_id, event_id=order_event.id))
+    db.add(AuditEvent(
+        actor=context.customer.email_normalized, action="test_refund", entity_type="payment",
+        entity_id=attempt.public_id, payload={"amount": str(data.amount), "currency": attempt.currency, "note": data.note, "remaining": str(remaining)},
+    ))
+    db.commit()
+    db.refresh(attempt)
+    return _payment_output(db, attempt)
+
+
+@router.get("/staff/payments", response_model=list[PaymentOut])
+def staff_list_test_payments(context: AuthContext = Depends(require_staff), db: Session = Depends(get_db)) -> list[PaymentOut]:
+    _require_test_payment_database(db)
+    if context.customer.role != "admin":
+        raise HTTPException(status_code=403, detail="Administrator access required for financial records")
+    attempts = db.scalars(select(PaymentAttempt).where(PaymentAttempt.provider == TestPaymentSimulator.name).order_by(PaymentAttempt.created_at.desc()).limit(200)).all()
+    return [_payment_output(db, attempt) for attempt in attempts]
 
 
 @router.get("/me/orders", response_model=list[OrderOut])

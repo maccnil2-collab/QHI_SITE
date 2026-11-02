@@ -15,9 +15,7 @@ const webPort = Number(process.env.QHI_E2E_WEB_PORT ?? "13000");
 const apiBase = `http://127.0.0.1:${apiPort}/api/v1`;
 const webBase = `http://127.0.0.1:${webPort}`;
 const adminKey = process.env.QHI_E2E_ADMIN_API_KEY ?? randomBytes(32).toString("base64url");
-const npmCommand = process.env.npm_execpath
-  ? `"${process.execPath}" "${process.env.npm_execpath}"`
-  : "npm";
+const nextCommand = `"${process.execPath}" "node_modules/next/dist/bin/next"`;
 process.env.QHI_E2E_API_URL = apiBase;
 process.env.QHI_E2E_ADMIN_API_KEY = adminKey;
 
@@ -43,14 +41,14 @@ export default defineConfig({
     {
       command: `..\\.venv\\Scripts\\python.exe -m uvicorn app.main:app --app-dir ..\\backend --host 127.0.0.1 --port ${apiPort}`,
       url: `${apiBase}/ready`,
-      env: { DATABASE_URL: databaseUrl, APP_ENV: "development", CORS_ORIGINS: webBase, ADMIN_API_KEY: adminKey },
+      env: { DATABASE_URL: databaseUrl, APP_ENV: "development", QHI_TEST_PAYMENTS_ENABLED: "true", CORS_ORIGINS: webBase, ADMIN_API_KEY: adminKey },
       timeout: 60_000,
       reuseExistingServer: false,
     },
     {
-      command: `${npmCommand} run dev -- --hostname 127.0.0.1 --port ${webPort}`,
+      command: `${nextCommand} dev --hostname 127.0.0.1 --port ${webPort}`,
       url: `${webBase}/en`,
-      env: { NEXT_PUBLIC_API_URL: apiBase, NEXT_TELEMETRY_DISABLED: "1", NEXT_DIST_DIR: ".next-e2e" },
+      env: { NEXT_PUBLIC_API_URL: apiBase, NEXT_PUBLIC_QHI_TEST_PAYMENTS_ENABLED: "true", NEXT_TELEMETRY_DISABLED: "1", NEXT_DIST_DIR: ".next-e2e" },
       timeout: 120_000,
       reuseExistingServer: false,
     },

@@ -6,12 +6,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class QuoteRequest(BaseModel):
     price_cny: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    car_id: int | None = Field(default=None, gt=0)
 
 
 class QuoteOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    car_id: int | None = None
     created_at: datetime
     currency: str = "TJS"
     price_cny: Decimal

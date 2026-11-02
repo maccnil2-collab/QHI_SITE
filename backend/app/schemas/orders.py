@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -9,6 +10,7 @@ OrderStatus = Literal["requested", "confirmed", "sourcing", "purchased", "in_tra
 
 class OrderCreate(BaseModel):
     car_id: int
+    quote_id: int | None = Field(default=None, gt=0)
     customer_note: str | None = Field(default=None, max_length=2000)
 
 
@@ -36,6 +38,7 @@ class OrderCarOut(BaseModel):
     brand: str
     model: str
     year: int
+    is_demo: bool
 
 
 class OrderOut(BaseModel):
@@ -45,6 +48,9 @@ class OrderOut(BaseModel):
     order_number: str
     status: str
     customer_note: str | None
+    quote_id: int | None = None
+    quoted_amount: Decimal | None = None
+    currency: str | None = None
     car: OrderCarOut
     events: list[OrderEventOut]
     created_at: datetime

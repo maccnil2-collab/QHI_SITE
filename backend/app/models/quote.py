@@ -11,6 +11,7 @@ class PriceQuote(Base):
     __tablename__ = "price_quotes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    car_id: Mapped[int | None] = mapped_column(ForeignKey("cars.id", ondelete="SET NULL"), nullable=True, index=True)
     tariff_id: Mapped[int] = mapped_column(ForeignKey("pricing_tariffs.id", ondelete="RESTRICT"), index=True)
     customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id", ondelete="SET NULL"), nullable=True, index=True)
     tariff_name: Mapped[str] = mapped_column(String(120))

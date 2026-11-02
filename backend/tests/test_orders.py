@@ -39,7 +39,7 @@ def test_staff_order_contact_and_private_events_are_staff_only():
         "id": 3, "order_number": "QHI-2026-ABC123", "status": "in_transit",
         "customer_note": "Please call before delivery", "customer_id": 8,
         "customer": {"id": 8, "full_name": "Customer Name", "email_normalized": "customer@example.test", "phone": "+992900000000"},
-        "car": {"id": 5, "slug": "sample-ev", "brand": "Sample", "model": "EV", "year": 2026},
+        "car": {"id": 5, "slug": "sample-ev", "brand": "Sample", "model": "EV", "year": 2026, "is_demo": False},
         "events": [{"id": 10, "event_type": "status_changed", "status": "in_transit", "public_note": "Vehicle departed", "internal_note": "Supplier tracking ref private", "created_at": created}],
         "created_at": created, "updated_at": created,
     }

@@ -27,3 +27,17 @@ class DemoProviderDisabled:
         return False
     def request_refund(self, *, provider_reference: str, amount: Decimal, idempotency_key: str) -> str:
         raise RuntimeError("Refund processing is disabled; no transaction was created")
+
+
+class TestPaymentSimulator:
+    """Records explicit outcomes in an isolated test DB; never contacts a payment network."""
+    name = "test_simulator"
+
+    def simulate(self, *, outcome: str, idempotency_key: str) -> PaymentSession:
+        if outcome not in {"approved", "declined"}:
+            raise ValueError("Unsupported test payment outcome")
+        return PaymentSession(
+            provider_reference=f"test_{idempotency_key[:48]}",
+            redirect_url="",
+            status="succeeded" if outcome == "approved" else "failed",
+        )
