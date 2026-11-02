@@ -66,6 +66,19 @@ test("customer registers, restores their session, saves a quote and creates an o
   await expect(page.locator(".account-record").filter({ hasText: "Integration EV" })).toBeVisible();
   await page.getByRole("button", { name: "Simulate TEST payment" }).click();
   await expect(page.getByText("TEST · succeeded")).toBeVisible();
+  const customerList = await request.get(`${apiUrl}/admin/customers?limit=100`, {
+    headers: { "X-Admin-Token": process.env.QHI_E2E_ADMIN_API_KEY! },
+  });
+  expect(customerList.ok(), await customerList.text()).toBeTruthy();
+  const customer = (await customerList.json() as { id: number; email_normalized: string }[]).find((item) => item.email_normalized === email);
+  expect(customer, "Registered TEST customer should be visible to the protected admin API").toBeTruthy();
+  const promoted = await request.patch(`${apiUrl}/admin/customers/${customer!.id}/role`, {
+    headers: { "X-Admin-Token": process.env.QHI_E2E_ADMIN_API_KEY! }, data: { role: "admin" },
+  });
+  expect(promoted.ok(), await promoted.text()).toBeTruthy();
+  await page.reload();
+  await page.getByRole("button", { name: "Simulate test refund" }).click();
+  await expect(page.getByText("TEST · refunded")).toBeVisible();
 });
 
 test("staff manages a CRM lead and the admin catalog panel connects", async ({ page, request }) => {
