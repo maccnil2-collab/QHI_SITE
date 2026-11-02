@@ -4,7 +4,7 @@ Updated: 2026-11-02
 
 ## Current verified status (2026-11-02)
 
-- Latest verified work is recorded in root `PROJECT_STATUS.md` at source checkpoint `710cfeb`.
+- Latest verified work is recorded in root `PROJECT_STATUS.md` at source checkpoint `2800018`.
 - Local API and frontend still return HTTP 200 at ports 8001 and 3000. The running API process is older than the current source import; it serves `qhi_auto_demo` but has not reloaded the new 0013 payment routes.
 - `qhi_auto_demo` remains at 100 published `is_demo=true` cards, 300 image rows, zero customers/orders/payment attempts. Migration 0013 was applied after a backup. The workflow and browser tests use separate `_test` databases with pre-test backups.
 - Verification: backend 60 passed/1 skipped; PostgreSQL workflow 1 passed; frontend typecheck, lint, and production build passed. All 8 Playwright desktop/mobile scenarios reported success, including quote-to-order with amount snapshot and simulated TEST payment, CRM/admin, and QHI CARE. The Playwright runner needed interruption during Windows server teardown after all cases passed.
