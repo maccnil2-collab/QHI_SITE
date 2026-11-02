@@ -4,11 +4,11 @@ Updated: 2026-11-02
 
 ## Current verified status (2026-11-02)
 
-- Current code checkpoint: `2892217`. Local API and frontend are live on ports 8001 and 3000. The API readiness endpoint and `http://localhost:3000/ru` both return HTTP 200.
-- DEMO and TEST data are separated: `qhi_auto_demo` has 100 published `is_demo=true` cards, 300 image rows, and a labeled illustrative tariff; `qhi_auto_app_test` holds only workflow/E2E fixtures. TEST database backups were made before test mutations.
-- Verification: backend 58 passed/1 skipped; PostgreSQL workflow 1 passed; frontend typecheck, lint, and production build passed. Public catalog API returns 100 cards for RU/TG/EN; search and category filtering return results. Browser opened a vehicle detail and found three gallery items and no mobile horizontal overflow.
-- Playwright locale/detail, CRM/admin, and QHI CARE ticket intake plus manager resolution pass on desktop and mobile. Registration → quote → order remains unverified: the customer E2E fails before rendering the quote result, with no `/quotes` POST in its captured network trace. Browser form replacement was observed during that flow; the trigger is not yet established. A separate anonymous quote against the DEMO database succeeds.
-- Image hosts are blocked in the sandbox browser, so only image URL and license metadata were verified; photo pixels did not load in this environment. Payments, outbound email/SMS, and password recovery are not enabled. Nothing was published and no real payment was made.
+- Latest verified work is recorded in root `PROJECT_STATUS.md` at source checkpoint `710cfeb`.
+- Local API and frontend still return HTTP 200 at ports 8001 and 3000. The running API process is older than the current source import; it serves `qhi_auto_demo` but has not reloaded the new 0013 payment routes.
+- `qhi_auto_demo` remains at 100 published `is_demo=true` cards, 300 image rows, zero customers/orders/payment attempts. Migration 0013 was applied after a backup. The workflow and browser tests use separate `_test` databases with pre-test backups.
+- Verification: backend 60 passed/1 skipped; PostgreSQL workflow 1 passed; frontend typecheck, lint, and production build passed. All 8 Playwright desktop/mobile scenarios reported success, including quote-to-order with amount snapshot and simulated TEST payment, CRM/admin, and QHI CARE. The Playwright runner needed interruption during Windows server teardown after all cases passed.
+- Photo URLs and license metadata exist, but this browser sandbox blocks the external image hosts, so decoded photo pixels could not be verified. Real payments, outbound email/SMS, and password recovery are not enabled. Nothing was published and no real payment was made.
 
 The sections below record the earlier takeover and are historical; use the current status above for present capability.
 

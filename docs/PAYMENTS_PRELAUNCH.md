@@ -2,9 +2,9 @@
 
 ## Current state
 
-Payment processing is disabled. No checkout URL can be created, no payment can be approved, and no card data is collected by the application. `app.services.payment_providers` defines the provider-neutral create-session, webhook-verification, and refund interface; `DemoProviderDisabled` refuses all financial operations. The payment-attempt schema and idempotency constraint are present in the current local databases after migration `0011_demo_inventory_support_payments`; this is only storage groundwork and does not enable a payment flow.
+Real payment processing is disabled. No checkout URL can be created, no real payment can be approved, and no card data is collected by the application. `DemoProviderDisabled` refuses all real financial operations. `TestPaymentSimulator` records only explicitly requested simulated outcomes and contacts no network. Its routes require both `QHI_TEST_PAYMENTS_ENABLED=true`, a non-production `APP_ENV`, and a connected PostgreSQL database whose name ends in `_test`. DEMO payments are rejected. Refund simulations require an admin role and create idempotent ledger events; no funds are transferred.
 
-This is an integration boundary, not a completed provider integration. There is no Visa, Mastercard, PayPal, Stripe, regional gateway, webhook endpoint, payment history screen, or refund workflow enabled.
+This is a TEST workflow, not a provider integration. The additive `0013_order_payment_ledger` migration links saved vehicle estimates to orders, snapshots the quoted amount/currency, and records simulated payment/refund events. Customer and staff API history is available; no Visa, Mastercard, PayPal, Stripe, regional gateway, signed webhook, or real checkout is configured.
 
 ## Required before real payments
 

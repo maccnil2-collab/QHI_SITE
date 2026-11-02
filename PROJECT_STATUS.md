@@ -4,14 +4,15 @@ Updated: 2026-11-02
 
 ## Current verified status (2026-11-02)
 
-- Latest committed source checkpoint: `921e011` (`Fix quote form hydration race`). It includes `9e1783c` (QHI CARE staff resolution), `2892217` (isolated Playwright build output), `5e88ff9` (restrict demo import to `qhi_auto_demo`), and `20f7f0d` (100 localized DEMO vehicles).
+- Latest source checkpoint: `710cfeb` (`Add guarded TEST payment and refund workflow`).
 - Local servers are running: API `http://127.0.0.1:8001/api/v1`, frontend `http://localhost:3000/ru`. `/ready` and the site both return HTTP 200.
 - The isolated UTF-8 database `qhi_auto_demo` contains exactly 100 published cars with `is_demo=true`, 300 image metadata rows, and an explicitly illustrative DEMO tariff. It has no customer accounts. The separate `qhi_auto_app_test` database contains workflow/E2E test fixtures and test-generated records; backups were made to the local temp directory before those workflows. Do not copy test rows into the demo database.
 - Catalog API verification returned all 100 cards in RU/TG/EN; brand search, category filtering, USD/TJS values, and three-image gallery metadata per car passed. Browser verification rendered 100 cards, opened a detail page with three gallery entries, and found no mobile horizontal overflow.
-- Backend suite: 58 passed, 1 skipped. PostgreSQL workflow test: 1 passed. Frontend typecheck, ESLint, and optimized production build passed.
-- Playwright desktop/mobile: all 8 scenarios passed, covering locale/detail navigation, registration/session restore, quote/order, CRM/admin, and QHI CARE ticket intake plus staff resolution. A hydration-readiness guard and explicit page readiness waits fixed a race that previously dropped the quote input before submission.
+- Backend suite: 60 passed, 1 skipped. PostgreSQL workflow: 1 passed, including immutable quote amount snapshots, TEST payment idempotency, explicit production/DEMO database guards, admin-only partial/full refunds, and ledger history. Frontend typecheck, ESLint, and optimized production build passed.
+- Playwright desktop/mobile: all 8 scenarios passed on a fresh isolated TEST database, now including customer registration/session restore, quote attached to a vehicle, an order with frozen quote amount, and explicit simulated TEST payment. CRM/admin and QHI CARE ticket intake/resolution passed as well. The runner needed interruption during Windows web-server teardown after all test cases had reported success.
+- Migration `0013_order_payment_ledger` is applied to DEMO and the existing TEST databases only after separate backups. DEMO still has exactly 100 `is_demo=true` vehicles, 300 image rows, zero customers/orders/payment attempts. TEST and DEMO records remain separate.
 - External Unsplash URLs are blocked by this browser sandbox (`ERR_NETWORK_ACCESS_DENIED`); URL/license metadata is present, but successful photo pixel rendering remains unverified here. No public deployment or real payment occurred.
-- Payments are disabled; email/SMS delivery and password recovery are not configured. The current site is a local DEMO environment, not a production-ready customer service.
+- Real payment processing remains disabled. The explicit `test_simulator` can create TEST ledger entries and admin refunds only when a backend test flag is enabled and the connected database name ends in `_test`; it never contacts a provider or transfers funds. Email/SMS delivery and password recovery are not configured. The local browser backend process on port 8001 still serves the previous imported code and needs a controlled restart to expose migration 0013 routes; its readiness and the existing site remain HTTP 200.
 
 The earlier takeover snapshot below is historical and is superseded by this section.
 
