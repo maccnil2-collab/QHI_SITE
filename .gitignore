@@ -26,3 +26,14 @@ node_modules/
 
 
 .next-*/
+
+# Local audit and temporary files
+QHI_FUNCTIONAL_AUDIT.txt
+test.txt
+
+# TypeScript cache
+frontend/tsconfig.tsbuildinfo
+
+# Unrelated Godot project
+frontend/public/images/MinasTirith_FromScratch_Godot/
+frontend/public/images/MinasTirith_FromScratch_Godot.zip
